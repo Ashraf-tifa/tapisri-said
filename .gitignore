@@ -1,0 +1,24 @@
+# Backend
+backend/.env
+backend/.env.backup
+backend/vendor/
+backend/storage/logs/*.log
+backend/storage/framework/cache/
+backend/storage/framework/sessions/
+backend/storage/framework/views/
+backend/bootstrap/cache/
+
+# Frontend
+frontend/node_modules/
+frontend/dist/
+frontend/.env
+frontend/.env.local
+frontend/.env.*.local
+
+# Claude worktrees
+.claude/
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
