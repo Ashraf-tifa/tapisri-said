@@ -6,11 +6,13 @@ cmds = ["composer install --no-dev --optimize-autoloader"]
 
 [phases.build]
 cmds = [
-  "mkdir -p storage/framework/views storage/framework/cache storage/framework/sessions",
+  "mkdir -p storage/framework/views storage/framework/cache storage/framework/sessions storage/logs",
   "php artisan config:cache",
-  "php artisan route:cache",
-  "php artisan view:cache"
+  "php artisan route:cache"
 ]
 
 [start]
 cmd = "php artisan migrate --force && php artisan serve --host=0.0.0.0 --port=$PORT"
+
+[variables]
+VIEW_COMPILED_PATH = "/app/storage/framework/views"
