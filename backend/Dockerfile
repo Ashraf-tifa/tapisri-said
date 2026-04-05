@@ -26,9 +26,9 @@ RUN mkdir -p storage/framework/views \
     bootstrap/cache \
     && chmod -R 775 storage bootstrap/cache
 
-# Cache config and routes (not views — needs DB)
-RUN php artisan config:cache && php artisan route:cache
+# Cache routes only (config cache is done at runtime to pick up env vars)
+RUN php artisan route:cache
 
 EXPOSE 8080
 
-CMD php artisan migrate --force && php artisan serve --host=0.0.0.0 --port=8080
+CMD php artisan config:cache && php artisan migrate --force && php artisan serve --host=0.0.0.0 --port=8080
