@@ -1,5 +1,8 @@
 FROM php:8.3-cli
 
+# Override entrypoint to avoid Railway conflicts
+ENTRYPOINT []
+
 # Install system dependencies
 RUN apt-get update && apt-get install -y \
     git curl zip unzip libpng-dev libxml2-dev libzip-dev libonig-dev \
