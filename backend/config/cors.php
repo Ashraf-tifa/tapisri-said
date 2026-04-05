@@ -12,12 +12,16 @@ return [
         'http://127.0.0.1:5174',
         'http://127.0.0.1:5175',
         'http://localhost:3000',
-        // Production
+        // Production - Vercel
         'https://tapisri-said.vercel.app',
+        'https://tapisri-said-lipnytpji-ashyou011-4269s-projects.vercel.app',
+        // Production - Custom domain
         'https://tapisri-said.ma',
         'https://www.tapisri-said.ma',
     ],
-    'allowed_origins_patterns' => [],
+    'allowed_origins_patterns' => [
+        '#^https://tapisri-said.*\.vercel\.app$#',
+    ],
     'allowed_headers' => ['*'],
     'exposed_headers' => [],
     'max_age' => 86400,
