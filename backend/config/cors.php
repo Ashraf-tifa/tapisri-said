@@ -12,7 +12,8 @@ return [
         'http://127.0.0.1:5174',
         'http://127.0.0.1:5175',
         'http://localhost:3000',
-        // Production — update with your real domain
+        // Production
+        'https://tapisri-said.vercel.app',
         'https://tapisri-said.ma',
         'https://www.tapisri-said.ma',
     ],
