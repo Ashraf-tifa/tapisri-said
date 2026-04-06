@@ -1,6 +1,6 @@
 FROM php:8.3-apache
 
-# Clear the default entrypoint so Railway can launch CMD directly
+# Clear default entrypoint so Railway can run CMD directly
 ENTRYPOINT []
 
 # Install PHP extensions
@@ -9,44 +9,34 @@ RUN apt-get update && apt-get install -y \
     && docker-php-ext-install pdo pdo_mysql mbstring xml zip gd \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
-# Enable Apache modules
+# Enable mod_rewrite and mod_headers
 RUN a2enmod rewrite headers
 
-# Configure Apache to listen on port 8080
-RUN sed -i 's/Listen 80$/Listen 8080/' /etc/apache2/ports.conf \
-    && sed -i 's/<VirtualHost \*:80>/<VirtualHost *:8080>/' /etc/apache2/sites-available/000-default.conf
+# Suppress Apache "ServerName" warning
+RUN echo "ServerName localhost" >> /etc/apache2/apache2.conf
 
-# Set document root to Laravel's public folder
-RUN sed -i 's|DocumentRoot /var/www/html|DocumentRoot /app/public|' /etc/apache2/sites-available/000-default.conf
-
-# Allow .htaccess and set directory options
-RUN printf '<Directory /app/public>\n    AllowOverride All\n    Require all granted\n</Directory>\n' \
-    >> /etc/apache2/sites-available/000-default.conf
-
-# Add CORS headers globally via Apache (most reliable approach)
-RUN printf 'Header always set Access-Control-Allow-Origin "*"\nHeader always set Access-Control-Allow-Methods "GET, POST, PUT, PATCH, DELETE, OPTIONS"\nHeader always set Access-Control-Allow-Headers "Content-Type, Authorization, Accept, X-Requested-With"\nHeader always set Access-Control-Max-Age "86400"\n' \
-    > /etc/apache2/conf-available/cors.conf \
-    && a2enconf cors
+# Replace default VirtualHost with our config (port injected at runtime by start.sh)
+COPY apache.conf /etc/apache2/sites-available/000-default.conf
 
 # Install Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
 WORKDIR /app
 
-# Install PHP dependencies
+# Install PHP dependencies first (layer cache)
 COPY composer.json composer.lock ./
 RUN composer install --no-dev --optimize-autoloader --no-scripts
 
-# Copy application files
+# Copy application source
 COPY . .
 
-# Set permissions
+# Set storage permissions
 RUN mkdir -p storage/framework/views storage/framework/cache \
         storage/framework/sessions storage/logs bootstrap/cache \
     && chmod -R 775 storage bootstrap/cache \
     && chown -R www-data:www-data /app
 
-# Copy startup script
+# Copy and prepare startup script
 COPY start.sh /start.sh
 RUN chmod +x /start.sh
 
