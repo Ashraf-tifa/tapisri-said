@@ -230,7 +230,7 @@ function ProductModal({ open, editProduct, categories, onClose, onSaved }) {
   }, [open, editProduct])
 
   // When products query updates (after image upload), sync savedProduct
-  const { data: products = [] } = useQuery({ queryKey: ['admin-products'], queryFn: () => api.get('/products').then((r) => r.data) })
+  const { data: products = [] } = useQuery({ queryKey: ['admin-products'], queryFn: () => api.get('/admin/products').then((r) => r.data) })
   useEffect(() => {
     if (savedProduct?.id) {
       const fresh = products.find((p) => p.id === savedProduct.id)
@@ -484,7 +484,7 @@ export default function AdminProducts() {
 
   const { data: products = [] } = useQuery({
     queryKey: ['admin-products'],
-    queryFn: () => api.get('/products').then((r) => r.data),
+    queryFn: () => api.get('/admin/products').then((r) => r.data),
   })
   const { data: categories = [] } = useQuery({
     queryKey: ['categories'],

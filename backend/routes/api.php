@@ -22,6 +22,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/admin/change-password', [AuthController::class, 'changePassword']);
 
     Route::apiResource('/admin/categories', CategoryController::class)->except(['index', 'show']);
+    Route::get('/admin/products', [ProductController::class, 'adminIndex']);
     Route::apiResource('/admin/products', ProductController::class)->except(['index', 'show']);
 
     // Product images

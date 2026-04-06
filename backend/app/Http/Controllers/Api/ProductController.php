@@ -38,6 +38,16 @@ class ProductController extends Controller
         return response()->json($product);
     }
 
+    /** Admin: returns ALL products including inactive ones */
+    public function adminIndex(Request $request)
+    {
+        $products = Product::with(['mainImage', 'category', 'images'])
+            ->orderBy('sort_order')
+            ->get();
+
+        return response()->json($products);
+    }
+
     public function store(Request $request)
     {
         $data = $request->validate([

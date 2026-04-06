@@ -26,7 +26,13 @@ export default function ProductsPage() {
   const [canScroll, setCanScroll] = useState(false)
   const isMobile = useIsMobile()
 
-  // Check if chips container is scrollable
+  // ── Queries first (before useEffect that depends on categories) ──
+  const { data: categories = [] } = useQuery({
+    queryKey: ['categories'],
+    queryFn: () => api.get('/categories').then((r) => r.data),
+  })
+
+  // Check if chips are scrollable (after categories is declared)
   useEffect(() => {
     const el = chipsRef.current
     if (!el) return
@@ -37,14 +43,7 @@ export default function ProductsPage() {
     return () => { el.removeEventListener('scroll', check); window.removeEventListener('resize', check) }
   }, [categories])
 
-  const scrollChips = () => {
-    chipsRef.current?.scrollBy({ left: 160, behavior: 'smooth' })
-  }
-
-  const { data: categories = [] } = useQuery({
-    queryKey: ['categories'],
-    queryFn: () => api.get('/categories').then((r) => r.data),
-  })
+  const scrollChips = () => chipsRef.current?.scrollBy({ left: 160, behavior: 'smooth' })
 
   const { data: products = [], isLoading } = useQuery({
     queryKey: ['products', categorySlug],
