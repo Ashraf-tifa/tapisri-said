@@ -1,13 +1,11 @@
 #!/bin/sh
 export PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
 
-PORT="${PORT:-8080}"
-echo "==> PORT is $PORT"
+echo "==> Starting PHP-FPM..."
+php-fpm -D
+echo "PHP-FPM started, PID: $(cat /var/run/php-fpm.pid 2>/dev/null || echo 'unknown')"
 
-# Inject port into nginx config
-sed -i "s/NGINX_PORT/$PORT/g" /etc/nginx/nginx.conf
-
-# Artisan setup
+echo "==> Artisan setup..."
 echo "==> Clearing config cache..."
 php /app/artisan config:clear || true
 
@@ -22,5 +20,8 @@ echo "==> Starting PHP-FPM..."
 php-fpm -D
 
 # Start Nginx in foreground (keeps container alive)
-echo "==> Starting Nginx on port $PORT..."
+echo "==> Testing nginx config..."
+nginx -t 2>&1
+
+echo "==> Starting Nginx on port 8080..."
 exec nginx -g "daemon off;"
