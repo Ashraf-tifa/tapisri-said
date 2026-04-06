@@ -1,5 +1,8 @@
 FROM php:8.3-apache
 
+# Override PHP image entrypoint (Railway can't find docker-php-entrypoint)
+ENTRYPOINT []
+
 # Install PHP extensions
 RUN apt-get update && apt-get install -y \
     git curl zip unzip libpng-dev libxml2-dev libzip-dev libonig-dev \
