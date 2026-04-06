@@ -1,11 +1,9 @@
 #!/bin/sh
 set -e
 
-echo "==> Clearing config cache..."
-/usr/local/bin/php artisan config:clear
-
-echo "==> Caching config..."
-/usr/local/bin/php artisan config:cache
+echo "==> Clearing any stale config cache..."
+rm -f /app/bootstrap/cache/config.php
+rm -f /app/bootstrap/cache/routes-v7.php
 
 echo "==> Running migrations..."
 /usr/local/bin/php artisan migrate --force
