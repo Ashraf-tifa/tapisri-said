@@ -27,14 +27,29 @@ function useIsMobile() {
 }
 
 /* ─── Inline Image Section ─────────────────────────────────── */
-function PhotosSection({ product, onUpdate }) {
+function PhotosSection({ product }) {
   const qc = useQueryClient()
   const toast = useToast()
   const inputRef = useRef()
   const [previews, setPreviews] = useState([])
   const [dragging, setDragging] = useState(false)
 
-  const images = product?.images || []
+  // Own query — always fresh for this product
+  const { data: freshImages = product?.images || [] } = useQuery({
+    queryKey: ['product-images', product?.id],
+    queryFn: async () => {
+      const res = await api.get('/admin/products')
+      const found = res.data.find((p) => p.id === product.id)
+      return found?.images || []
+    },
+    enabled: !!product?.id,
+    staleTime: 0,
+  })
+
+  const invalidate = () => {
+    qc.invalidateQueries({ queryKey: ['admin-products'] })
+    qc.invalidateQueries({ queryKey: ['product-images', product?.id] })
+  }
 
   const upload = useMutation({
     mutationFn: (files) => {
@@ -45,23 +60,24 @@ function PhotosSection({ product, onUpdate }) {
       })
     },
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['admin-products'] })
+      invalidate()
       setPreviews([])
       toast('Photos ajoutées !', 'success')
-      onUpdate?.()
     },
     onError: () => toast('Échec du téléchargement', 'error'),
   })
 
   const setMain = useMutation({
     mutationFn: (imgId) => api.patch(`/admin/products/${product.id}/images/${imgId}/main`),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['admin-products'] }); toast('Photo principale définie', 'info') },
+    onSuccess: () => { invalidate(); toast('Photo principale définie', 'info') },
   })
 
   const remove = useMutation({
     mutationFn: (imgId) => api.delete(`/admin/products/${product.id}/images/${imgId}`),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['admin-products'] }); toast('Photo supprimée', 'warning') },
+    onSuccess: () => { invalidate(); toast('Photo supprimée', 'warning') },
   })
+
+  const images = freshImages
 
   const handleFiles = (files) => {
     const valid = Array.from(files).filter((f) => f.type.startsWith('image/'))
@@ -425,10 +441,7 @@ function ProductModal({ open, editProduct, categories, onClose, onSaved }) {
                   animate={{ opacity: 1, x: 0 }}
                   exit={{ opacity: 0, x: -12 }}
                 >
-                  <PhotosSection
-                    product={savedProduct}
-                    onUpdate={() => {}}
-                  />
+                  <PhotosSection product={savedProduct} />
                   <button
                     style={{ ...ms.cancelBtn, marginTop: '1.2rem', width: '100%' }}
                     onClick={() => { onSaved?.(); onClose() }}
