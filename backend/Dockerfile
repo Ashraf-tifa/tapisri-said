@@ -1,5 +1,8 @@
 FROM php:8.3-fpm-alpine
 
+# Clear default entrypoint (Railway cannot find docker-php-entrypoint)
+ENTRYPOINT []
+
 # Install nginx + PHP extensions
 RUN apk add --no-cache \
     nginx git curl zip unzip \
