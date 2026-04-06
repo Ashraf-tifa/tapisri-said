@@ -13,5 +13,8 @@ php /app/artisan config:cache || true
 echo "==> Running migrations..."
 php /app/artisan migrate --force || true
 
+echo "==> Seeding admin user..."
+php /app/artisan db:seed --class=AdminSeeder --force || true
+
 echo "==> Starting server on 0.0.0.0:$PORT ..."
 exec php /app/artisan serve --host=0.0.0.0 --port=$PORT
