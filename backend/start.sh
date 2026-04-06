@@ -16,5 +16,8 @@ php /app/artisan migrate --force || true
 echo "==> Seeding admin user..."
 php /app/artisan db:seed --class=AdminSeeder --force || true
 
+echo "==> Creating storage symlink..."
+php /app/artisan storage:link --force || true
+
 echo "==> Starting server on 0.0.0.0:$PORT ..."
 exec php /app/artisan serve --host=0.0.0.0 --port=$PORT
