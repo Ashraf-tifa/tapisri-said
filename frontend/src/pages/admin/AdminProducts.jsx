@@ -495,9 +495,10 @@ export default function AdminProducts() {
   const [search, setSearch] = useState('')
   const [filterCat, setFilterCat] = useState('')
 
-  const { data: products = [] } = useQuery({
+  const { data: products = [], isError: productsError } = useQuery({
     queryKey: ['admin-products'],
     queryFn: () => api.get('/admin/products').then((r) => r.data),
+    retry: 2,
   })
   const { data: categories = [] } = useQuery({
     queryKey: ['categories'],
@@ -535,6 +536,13 @@ export default function AdminProducts() {
           <Plus size={18} /> Ajouter
         </motion.button>
       </div>
+
+      {/* Auth error banner */}
+      {productsError && (
+        <div style={{ background: '#fff3cd', border: '1px solid #ffc107', borderRadius: '10px', padding: '0.9rem 1.1rem', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.7rem', fontSize: '0.88rem', color: '#856404' }}>
+          ⚠️ Impossible de charger les produits. Veuillez vous <strong style={{ cursor: 'pointer', textDecoration: 'underline' }} onClick={() => window.location.reload()}>déconnecter et reconnecter</strong> pour rafraîchir votre session.
+        </div>
+      )}
 
       {/* Search + filter */}
       {products.length > 0 && (

@@ -4,8 +4,10 @@ export PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
 PORT="${PORT:-8080}"
 echo "==> PORT=$PORT"
 
-echo "==> Clearing config cache..."
+echo "==> Clearing all caches..."
 php /app/artisan config:clear || true
+php /app/artisan route:clear || true
+php /app/artisan cache:clear || true
 
 echo "==> Caching config..."
 php /app/artisan config:cache || true
