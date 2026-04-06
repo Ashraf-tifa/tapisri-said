@@ -1,7 +1,8 @@
 import { useState } from 'react'
-import { Routes, Route, Navigate } from 'react-router-dom'
+import { Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import useAuthStore from './store/authStore'
 import SplashScreen from './components/SplashScreen'
+import FloatingWhatsApp from './components/FloatingWhatsApp'
 
 // Public pages
 import HomePage from './pages/HomePage'
@@ -22,6 +23,13 @@ function PrivateRoute({ children }) {
   return isAuthenticated ? children : <Navigate to="/admin/login" replace />
 }
 
+function FloatingWaWrapper() {
+  const loc = useLocation()
+  const isAdmin = loc.pathname.startsWith('/admin')
+  if (isAdmin) return null
+  return <FloatingWhatsApp />
+}
+
 export default function App() {
   const [showSplash, setShowSplash] = useState(true)
 
@@ -30,6 +38,8 @@ export default function App() {
   }
 
   return (
+    <>
+    <FloatingWaWrapper />
     <Routes>
       {/* Public */}
       <Route path="/" element={<HomePage />} />
@@ -57,5 +67,6 @@ export default function App() {
       {/* 404 */}
       <Route path="*" element={<NotFoundPage />} />
     </Routes>
+    </>
   )
 }

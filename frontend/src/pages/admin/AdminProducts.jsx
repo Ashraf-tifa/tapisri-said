@@ -46,10 +46,19 @@ export default function AdminProducts() {
 
   const save = useMutation({
     mutationFn: (data) => editId ? api.put(`/admin/products/${editId}`, data) : api.post('/admin/products', data),
-    onSuccess: () => {
+    onSuccess: (response) => {
       qc.invalidateQueries({ queryKey: ['admin-products'] })
-      setForm(emptyForm); setEditId(null); setShowForm(false)
-      toast(editId ? 'Produit modifié avec succès' : 'Produit ajouté avec succès', 'success')
+      setForm(emptyForm)
+      setShowForm(false)
+      if (!editId) {
+        // Automatically open ImageUploader for new product
+        const created = response.data
+        toast('Produit créé ! Ajoutez les photos maintenant.', 'success')
+        setUploadProduct({ ...created, images: [] })
+      } else {
+        setEditId(null)
+        toast('Produit modifié avec succès', 'success')
+      }
     },
     onError: () => toast('Une erreur est survenue', 'error'),
   })
@@ -135,6 +144,11 @@ export default function AdminProducts() {
           <input style={s.input} placeholder="WhatsApp (+212...)" {...f('whatsapp_number')} />
         </div>
         <textarea style={{ ...s.input, minHeight: '90px', resize: 'vertical' }} placeholder="Description du produit" {...f('description')} />
+        {!editId && (
+          <div style={{ background: '#fdf4e8', border: '1px solid #e8d5b0', borderRadius: '8px', padding: '0.6rem 0.9rem', fontSize: '0.82rem', color: '#9a6a3a', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            📸 Après avoir sauvegardé, vous pourrez ajouter les photos.
+          </div>
+        )}
         <div style={s.checkRow}>
           <label style={s.checkLabel}>
             <input type="checkbox" checked={form.is_active} onChange={(e) => setForm({ ...form, is_active: e.target.checked })} />

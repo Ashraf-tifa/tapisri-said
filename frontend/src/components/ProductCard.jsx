@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { MessageCircle, Eye, Star } from 'lucide-react'
+import { MessageCircle, Eye, Star, Images } from 'lucide-react'
 import { img, waLink } from '../config'
 
 const PLACEHOLDER = 'https://placehold.co/400x300/f5e6d3/9a6a3a?text=Tapisri'
@@ -8,22 +8,35 @@ const PLACEHOLDER = 'https://placehold.co/400x300/f5e6d3/9a6a3a?text=Tapisri'
 export default function ProductCard({ product, index = 0 }) {
   const imageUrl = img(product.main_image?.path) || PLACEHOLDER
   const waUrl = waLink(product.whatsapp_number, `Bonjour, je suis intéressé(e) par: ${product.name}`)
+  const imgCount = product.images?.length || 0
 
   return (
     <motion.div
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3, delay: Math.min(index * 0.05, 0.4) }}
-      whileHover={{ y: -3, boxShadow: '0 12px 32px rgba(44,24,16,0.14)' }}
+      whileHover={{ y: -4, boxShadow: '0 16px 40px rgba(44,24,16,0.16)' }}
       style={s.card}
     >
       {/* Image */}
       <Link to={`/produits/${product.slug}`} style={s.imgWrap}>
         <img src={imageUrl} alt={product.name} style={s.img} loading="lazy" />
 
+        {/* Overlay on hover */}
+        <div style={s.overlay}>
+          <span style={s.overlayBtn}><Eye size={16} /> Voir</span>
+        </div>
+
         {product.is_featured && (
           <span style={s.badge}>
             <Star size={9} fill="#2c1810" color="#2c1810" /> Vedette
+          </span>
+        )}
+
+        {/* Image count badge */}
+        {imgCount > 1 && (
+          <span style={s.imgCount}>
+            <Images size={10} /> {imgCount}
           </span>
         )}
       </Link>
@@ -43,14 +56,9 @@ export default function ProductCard({ product, index = 0 }) {
               : 'Sur demande'}
           </span>
 
-          <div style={s.btns}>
-            <Link to={`/produits/${product.slug}`} style={s.btnView} title="Voir">
-              <Eye size={14} />
-            </Link>
-            <a href={waUrl} target="_blank" rel="noopener noreferrer" style={s.btnWa}>
-              <MessageCircle size={13} /> Commander
-            </a>
-          </div>
+          <a href={waUrl} target="_blank" rel="noopener noreferrer" style={s.btnWa}>
+            <MessageCircle size={14} /> Commander
+          </a>
         </div>
       </div>
     </motion.div>
@@ -60,42 +68,64 @@ export default function ProductCard({ product, index = 0 }) {
 const s = {
   card: {
     background: '#fff',
-    borderRadius: '14px',
+    borderRadius: '16px',
     overflow: 'hidden',
     display: 'flex', flexDirection: 'column',
-    boxShadow: '0 2px 8px rgba(44,24,16,0.08)',
+    boxShadow: '0 2px 12px rgba(44,24,16,0.08)',
     border: '1px solid #f0e8e0',
-    transition: 'box-shadow 0.2s, transform 0.2s',
+    transition: 'box-shadow 0.25s, transform 0.25s',
   },
 
   imgWrap: {
     display: 'block', position: 'relative',
     overflow: 'hidden', background: '#f5ede4',
-    aspectRatio: '4 / 3',
+    aspectRatio: '1 / 1',
   },
   img: {
     width: '100%', height: '100%',
     objectFit: 'cover', display: 'block',
-    transition: 'transform 0.4s ease',
+    transition: 'transform 0.5s ease',
+  },
+  overlay: {
+    position: 'absolute', inset: 0,
+    background: 'rgba(44,24,16,0.35)',
+    display: 'flex', alignItems: 'center', justifyContent: 'center',
+    opacity: 0, transition: 'opacity 0.25s',
+    backdropFilter: 'blur(2px)',
+    ':hover': { opacity: 1 },
+  },
+  overlayBtn: {
+    display: 'inline-flex', alignItems: 'center', gap: '0.4rem',
+    background: '#fff', color: '#2c1810',
+    padding: '0.5rem 1.1rem', borderRadius: '20px',
+    fontSize: '0.82rem', fontWeight: 700,
   },
   badge: {
-    position: 'absolute', top: '0.5rem', left: '0.5rem',
+    position: 'absolute', top: '0.6rem', left: '0.6rem',
     background: '#d4a96a', color: '#2c1810',
-    padding: '0.18rem 0.5rem', borderRadius: '20px',
+    padding: '0.22rem 0.6rem', borderRadius: '20px',
     fontSize: '0.65rem', fontWeight: 800,
+    display: 'inline-flex', alignItems: 'center', gap: '0.2rem',
+    boxShadow: '0 2px 6px rgba(0,0,0,0.15)',
+  },
+  imgCount: {
+    position: 'absolute', bottom: '0.5rem', right: '0.5rem',
+    background: 'rgba(0,0,0,0.55)', color: '#fff',
+    padding: '0.18rem 0.45rem', borderRadius: '12px',
+    fontSize: '0.65rem', fontWeight: 600,
     display: 'inline-flex', alignItems: 'center', gap: '0.2rem',
   },
 
   body: {
-    padding: '0.75rem 0.85rem 0.9rem',
-    display: 'flex', flexDirection: 'column', flex: 1, gap: '0.22rem',
+    padding: '0.85rem 0.9rem 1rem',
+    display: 'flex', flexDirection: 'column', flex: 1, gap: '0.25rem',
   },
   cat: {
-    fontSize: '0.65rem', fontWeight: 700,
-    textTransform: 'uppercase', letterSpacing: '0.7px', color: '#b08060',
+    fontSize: '0.63rem', fontWeight: 700,
+    textTransform: 'uppercase', letterSpacing: '0.8px', color: '#b08060',
   },
   name: {
-    fontSize: 'clamp(0.85rem, 2vw, 0.95rem)',
+    fontSize: 'clamp(0.88rem, 2.2vw, 1rem)',
     fontWeight: 700, color: '#2c1810',
     textDecoration: 'none', lineHeight: 1.35,
     display: '-webkit-box',
@@ -106,26 +136,20 @@ const s = {
   footer: {
     display: 'flex', alignItems: 'center',
     justifyContent: 'space-between', gap: '0.4rem',
-    marginTop: '0.5rem', flexWrap: 'wrap',
+    marginTop: '0.6rem',
   },
   price: {
-    fontSize: 'clamp(0.88rem, 2vw, 1rem)',
+    fontSize: 'clamp(0.92rem, 2vw, 1.05rem)',
     fontWeight: 900, color: '#c0522a',
   },
 
-  btns: { display: 'flex', gap: '0.3rem' },
-  btnView: {
-    display: 'flex', alignItems: 'center', justifyContent: 'center',
-    width: '32px', height: '32px',
-    background: '#f5ede4', color: '#9a6a3a',
-    borderRadius: '8px', textDecoration: 'none', flexShrink: 0,
-  },
   btnWa: {
-    display: 'flex', alignItems: 'center', gap: '0.28rem',
+    display: 'flex', alignItems: 'center', gap: '0.3rem',
     background: '#25D366', color: '#fff',
-    padding: '0 0.75rem', height: '32px',
-    borderRadius: '8px', textDecoration: 'none',
+    padding: '0.5rem 0.85rem',
+    borderRadius: '10px', textDecoration: 'none',
     fontSize: 'clamp(0.72rem, 1.8vw, 0.8rem)', fontWeight: 700,
-    whiteSpace: 'nowrap',
+    whiteSpace: 'nowrap', flexShrink: 0,
+    boxShadow: '0 2px 8px rgba(37,211,102,0.3)',
   },
 }
