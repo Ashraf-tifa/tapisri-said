@@ -76,20 +76,24 @@ export default function ProductsPage() {
           </AnimatePresence>
         </div>
 
-        <div style={s.chipsScroll}>
-          {[{ slug: '', name: 'Tout' }, ...categories].map((cat) => {
-            const active = categorySlug === (cat.slug ?? '')
-            return (
-              <motion.button
-                key={cat.slug ?? 'all'}
-                whileTap={{ scale: 0.92 }}
-                style={{ ...s.chip, ...(active ? s.chipActive : {}) }}
-                onClick={() => { setSearch(''); setSearchParams(cat.slug ? { category: cat.slug } : {}) }}
-              >
-                {cat.name}
-              </motion.button>
-            )
-          })}
+        <div style={s.chipsWrap}>
+          <div style={s.chipsScroll}>
+            {[{ slug: '', name: 'Tout' }, ...categories].map((cat) => {
+              const active = categorySlug === (cat.slug ?? '')
+              return (
+                <motion.button
+                  key={cat.slug ?? 'all'}
+                  whileTap={{ scale: 0.92 }}
+                  style={{ ...s.chip, ...(active ? s.chipActive : {}) }}
+                  onClick={() => { setSearch(''); setSearchParams(cat.slug ? { category: cat.slug } : {}) }}
+                >
+                  {cat.name}
+                </motion.button>
+              )
+            })}
+          </div>
+          {/* Right fade — shows more chips are hidden */}
+          <div style={s.chipsFade} />
         </div>
       </div>
 
@@ -177,9 +181,20 @@ const s = {
     display: 'flex', alignItems: 'center', justifyContent: 'center',
     color: '#666', flexShrink: 0, padding: 0,
   },
+  chipsWrap: {
+    position: 'relative', overflow: 'hidden',
+  },
   chipsScroll: {
     display: 'flex', gap: '0.4rem',
-    overflowX: 'auto', scrollbarWidth: 'none', paddingBottom: '2px',
+    overflowX: 'auto', scrollbarWidth: 'none',
+    paddingBottom: '4px', paddingRight: '2rem',
+    msOverflowStyle: 'none',
+  },
+  chipsFade: {
+    position: 'absolute', right: 0, top: 0, bottom: 0,
+    width: '48px',
+    background: 'linear-gradient(to right, rgba(255,255,255,0) 0%, rgba(255,255,255,1) 80%)',
+    pointerEvents: 'none',
   },
   chip: {
     padding: '0.35rem 1rem', borderRadius: '20px',

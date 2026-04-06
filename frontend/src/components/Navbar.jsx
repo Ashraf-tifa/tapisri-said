@@ -51,13 +51,14 @@ export default function Navbar() {
     return () => { document.body.style.overflow = '' }
   }, [open])
 
-  // Nav background: transparent on hero, solid when scrolled or not home
+  // Nav background: glass-dark on hero top, solid when scrolled
   const navBg = isHome && !scrolled
-    ? 'rgba(0,0,0,0)'
+    ? 'rgba(10,4,2,0.6)'
     : '#1c0e08'
+  const navBlur = isHome && !scrolled ? 'blur(12px)' : 'none'
   const navShadow = scrolled || !isHome
     ? '0 2px 20px rgba(0,0,0,0.5)'
-    : 'none'
+    : '0 1px 0 rgba(255,255,255,0.04)'
 
   return (
     <>
@@ -65,7 +66,7 @@ export default function Navbar() {
         initial={{ y: -64, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
-        style={{ ...s.nav, background: navBg, boxShadow: navShadow, transition: 'background 0.35s, box-shadow 0.35s' }}
+        style={{ ...s.nav, background: navBg, boxShadow: navShadow, backdropFilter: navBlur, WebkitBackdropFilter: navBlur, transition: 'background 0.35s, box-shadow 0.35s, backdrop-filter 0.35s' }}
       >
         {/* Brand */}
         <Link to="/" style={s.brand}>
