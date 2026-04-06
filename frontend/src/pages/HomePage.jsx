@@ -41,7 +41,8 @@ export default function HomePage() {
 
       {/* Hero */}
       <section style={styles.hero}>
-        <motion.div style={styles.heroContent} variants={stagger} initial="initial" animate="animate">
+        <div style={styles.heroOverlay} />
+        <motion.div style={styles.heroContentWrap} variants={stagger} initial="initial" animate="animate">
           <motion.span variants={fadeUp} style={styles.heroBadge}>
             Artisanat Marocain Authentique
           </motion.span>
@@ -233,12 +234,22 @@ export default function HomePage() {
 
 const styles = {
   hero: {
-    background: 'linear-gradient(to bottom, rgba(10,4,2,0.82) 0%, rgba(44,24,16,0.68) 100%), url(/images/tapi.jpg) center/cover no-repeat',
+    background: 'url(/images/tapi.jpg) center/cover no-repeat',
     minHeight: '92vh',
     display: 'flex', alignItems: 'center',
     padding: 'clamp(2rem, 6vw, 5rem) clamp(1.5rem, 6vw, 6rem)',
+    position: 'relative',
   },
-  heroContent: { maxWidth: '640px' },
+  heroOverlay: {
+    position: 'absolute', inset: 0,
+    background: 'linear-gradient(to bottom, rgba(5,2,1,0.88) 0%, rgba(10,4,2,0.78) 35%, rgba(44,24,16,0.62) 100%)',
+    pointerEvents: 'none',
+  },
+  heroContentWrap: {
+    position: 'relative', zIndex: 1,
+    maxWidth: '640px',
+  },
+  heroContent: { maxWidth: '640px', position: 'relative', zIndex: 1 },
   heroBadge: {
     display: 'inline-flex', alignItems: 'center', gap: '0.4rem',
     background: 'rgba(212,169,106,0.15)',

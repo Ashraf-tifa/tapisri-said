@@ -51,14 +51,12 @@ export default function Navbar() {
     return () => { document.body.style.overflow = '' }
   }, [open])
 
-  // Nav background: glass-dark on hero top, solid when scrolled
-  const navBg = isHome && !scrolled
-    ? 'rgba(10,4,2,0.6)'
-    : '#1c0e08'
-  const navBlur = isHome && !scrolled ? 'blur(12px)' : 'none'
-  const navShadow = scrolled || !isHome
+  // Nav: always solid dark (hero now has its own overlay)
+  const navBg = '#1c0e08'
+  const navBlur = 'none'
+  const navShadow = scrolled
     ? '0 2px 20px rgba(0,0,0,0.5)'
-    : '0 1px 0 rgba(255,255,255,0.04)'
+    : '0 1px 0 rgba(255,255,255,0.06)'
 
   return (
     <>

@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { useSearchParams } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Search, X, Package } from 'lucide-react'
+import { Search, X, Package, ChevronRight } from 'lucide-react'
 import Navbar from '../components/Navbar'
 import ProductCard from '../components/ProductCard'
 import api from '../api/axios'
@@ -22,7 +22,24 @@ export default function ProductsPage() {
   const [search, setSearch] = useState('')
   const categorySlug = searchParams.get('category') || ''
   const inputRef = useRef(null)
+  const chipsRef = useRef(null)
+  const [canScroll, setCanScroll] = useState(false)
   const isMobile = useIsMobile()
+
+  // Check if chips container is scrollable
+  useEffect(() => {
+    const el = chipsRef.current
+    if (!el) return
+    const check = () => setCanScroll(el.scrollLeft + el.clientWidth < el.scrollWidth - 4)
+    check()
+    el.addEventListener('scroll', check)
+    window.addEventListener('resize', check)
+    return () => { el.removeEventListener('scroll', check); window.removeEventListener('resize', check) }
+  }, [categories])
+
+  const scrollChips = () => {
+    chipsRef.current?.scrollBy({ left: 160, behavior: 'smooth' })
+  }
 
   const { data: categories = [] } = useQuery({
     queryKey: ['categories'],
@@ -77,7 +94,7 @@ export default function ProductsPage() {
         </div>
 
         <div style={s.chipsWrap}>
-          <div style={s.chipsScroll}>
+          <div ref={chipsRef} style={s.chipsScroll}>
             {[{ slug: '', name: 'Tout' }, ...categories].map((cat) => {
               const active = categorySlug === (cat.slug ?? '')
               return (
@@ -92,8 +109,20 @@ export default function ProductsPage() {
               )
             })}
           </div>
-          {/* Right fade — shows more chips are hidden */}
-          <div style={s.chipsFade} />
+          {/* Right fade + scroll arrow */}
+          <AnimatePresence>
+            {canScroll && (
+              <motion.div
+                style={s.chipsArrowWrap}
+                initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              >
+                <div style={s.chipsFade} />
+                <button style={s.chipsArrowBtn} onClick={scrollChips} aria-label="Voir plus">
+                  <ChevronRight size={16} />
+                </button>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
       </div>
 
@@ -187,14 +216,27 @@ const s = {
   chipsScroll: {
     display: 'flex', gap: '0.4rem',
     overflowX: 'auto', scrollbarWidth: 'none',
-    paddingBottom: '4px', paddingRight: '2rem',
+    paddingBottom: '4px', paddingRight: '3.5rem',
     msOverflowStyle: 'none',
+    WebkitOverflowScrolling: 'touch',
+  },
+  chipsArrowWrap: {
+    position: 'absolute', right: 0, top: 0, bottom: 0,
+    display: 'flex', alignItems: 'center',
   },
   chipsFade: {
-    position: 'absolute', right: 0, top: 0, bottom: 0,
-    width: '48px',
-    background: 'linear-gradient(to right, rgba(255,255,255,0) 0%, rgba(255,255,255,1) 80%)',
+    width: '40px', height: '100%',
+    background: 'linear-gradient(to right, rgba(255,255,255,0) 0%, rgba(255,255,255,1) 85%)',
     pointerEvents: 'none',
+  },
+  chipsArrowBtn: {
+    width: '30px', height: '30px', borderRadius: '50%',
+    background: '#fff', border: '1.5px solid #e0d4ca',
+    display: 'flex', alignItems: 'center', justifyContent: 'center',
+    cursor: 'pointer', color: '#7a5c48',
+    boxShadow: '0 2px 8px rgba(0,0,0,0.12)',
+    flexShrink: 0, marginRight: '2px',
+    padding: 0,
   },
   chip: {
     padding: '0.35rem 1rem', borderRadius: '20px',
