@@ -1,10 +1,13 @@
+import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
-import { motion } from 'framer-motion'
-import { MessageCircle, ArrowRight, Star, Shield, Truck, Sofa, Armchair, BedDouble, Package, Phone, MapPin, Clock } from 'lucide-react'
+import { motion, AnimatePresence } from 'framer-motion'
+import { MessageCircle, ArrowRight, Star, Shield, Truck, Sofa, Armchair, BedDouble, Package, Phone, MapPin, Clock, ChevronDown } from 'lucide-react'
 import Navbar from '../components/Navbar'
 import ProductCard from '../components/ProductCard'
 import api from '../api/axios'
+
+const CAT_PREVIEW = 3   // how many categories to show before "Afficher tout"
 
 const fadeUp = { initial: { opacity: 0, y: 40 }, animate: { opacity: 1, y: 0 } }
 const stagger = { animate: { transition: { staggerChildren: 0.12 } } }
@@ -21,6 +24,8 @@ function CatIcon({ slug }) {
 }
 
 export default function HomePage() {
+  const [showAllCats, setShowAllCats] = useState(false)
+
   const { data: categories = [] } = useQuery({
     queryKey: ['categories'],
     queryFn: () => api.get('/categories').then((r) => r.data),
@@ -95,7 +100,7 @@ export default function HomePage() {
           <h2 style={styles.sectionTitle}>Explorez par Catégorie</h2>
         </motion.div>
         <div style={styles.categoryGrid}>
-          {categories.map((cat, i) => (
+          {(showAllCats ? categories : categories.slice(0, CAT_PREVIEW)).map((cat, i) => (
             <motion.div
               key={cat.id}
               initial={{ opacity: 0, scale: 0.92 }}
@@ -115,6 +120,25 @@ export default function HomePage() {
             </motion.div>
           ))}
         </div>
+
+        {/* Show more / less button */}
+        {categories.length > CAT_PREVIEW && (
+          <motion.div
+            initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true }}
+            style={{ textAlign: 'center', marginTop: '1.8rem' }}
+          >
+            <motion.button
+              whileTap={{ scale: 0.96 }}
+              whileHover={{ y: -2 }}
+              style={styles.showMoreBtn}
+              onClick={() => setShowAllCats(!showAllCats)}
+            >
+              {showAllCats
+                ? <>Réduire <ChevronDown size={16} style={{ transform: 'rotate(180deg)' }} /></>
+                : <>Afficher tout ({categories.length}) <ChevronDown size={16} /></>}
+            </motion.button>
+          </motion.div>
+        )}
       </section>
 
       {/* Featured Products */}
@@ -272,6 +296,15 @@ const styles = {
   catName: { fontSize: '1rem', fontWeight: 800, color: '#2c1810', margin: '0 0 0.3rem' },
   catCount: { color: '#9a6a3a', fontSize: '0.84rem', margin: '0 0 0.9rem' },
   catCta: { display: 'inline-flex', alignItems: 'center', gap: '0.3rem', color: '#d4a96a', fontWeight: 700, fontSize: '0.84rem' },
+  showMoreBtn: {
+    display: 'inline-flex', alignItems: 'center', gap: '0.5rem',
+    background: '#fff', color: '#2c1810',
+    border: '2px solid #e8d5b0', padding: '0.7rem 1.6rem',
+    borderRadius: '50px', fontWeight: 700, fontSize: '0.9rem',
+    cursor: 'pointer', fontFamily: 'inherit',
+    boxShadow: '0 2px 12px rgba(44,24,16,0.08)',
+    transition: 'border-color 0.2s, box-shadow 0.2s',
+  },
 
   featuredSection: { background: '#fff', padding: 'clamp(2.5rem, 5vw, 4rem) 0' },
   featuredInner: { maxWidth: '1200px', margin: '0 auto', padding: '0 clamp(1rem, 4vw, 2rem)' },

@@ -1,7 +1,17 @@
 import { useState, useEffect } from 'react'
 import { Link, NavLink, useLocation } from 'react-router-dom'
+import { useQuery } from '@tanstack/react-query'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Home, ShoppingBag, Menu, X, LogIn, Phone } from 'lucide-react'
+import { Home, ShoppingBag, Menu, X, Phone, ChevronRight, Tag, Sofa, Armchair, BedDouble, Package } from 'lucide-react'
+import api from '../api/axios'
+
+const WA = import.meta.env.VITE_WHATSAPP || '212671998528'
+
+const CAT_ICONS = { 'salon-marocain': Sofa, 'canape': Armchair, 'lit': BedDouble }
+function CatIcon({ slug, size = 18 }) {
+  const Icon = CAT_ICONS[slug] || Package
+  return <Icon size={size} strokeWidth={1.5} />
+}
 
 function useIsMobile() {
   const [v, setV] = useState(window.innerWidth < 680)
@@ -13,10 +23,27 @@ function useIsMobile() {
   return v
 }
 
+function useScrolled() {
+  const [scrolled, setScrolled] = useState(false)
+  useEffect(() => {
+    const h = () => setScrolled(window.scrollY > 30)
+    window.addEventListener('scroll', h, { passive: true })
+    return () => window.removeEventListener('scroll', h)
+  }, [])
+  return scrolled
+}
+
 export default function Navbar() {
   const [open, setOpen] = useState(false)
   const location = useLocation()
   const isMobile = useIsMobile()
+  const scrolled = useScrolled()
+  const isHome = location.pathname === '/'
+
+  const { data: categories = [] } = useQuery({
+    queryKey: ['categories'],
+    queryFn: () => api.get('/categories').then((r) => r.data),
+  })
 
   useEffect(() => setOpen(false), [location.pathname])
   useEffect(() => {
@@ -24,19 +51,28 @@ export default function Navbar() {
     return () => { document.body.style.overflow = '' }
   }, [open])
 
+  // Nav background: transparent on hero, solid when scrolled or not home
+  const navBg = isHome && !scrolled
+    ? 'rgba(0,0,0,0)'
+    : '#1c0e08'
+  const navShadow = scrolled || !isHome
+    ? '0 2px 20px rgba(0,0,0,0.5)'
+    : 'none'
+
   return (
     <>
       <motion.nav
         initial={{ y: -64, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
-        style={s.nav}
+        style={{ ...s.nav, background: navBg, boxShadow: navShadow, transition: 'background 0.35s, box-shadow 0.35s' }}
       >
+        {/* Brand */}
         <Link to="/" style={s.brand}>
           Tapisri<span style={{ color: '#d4a96a' }}>-Said</span>
         </Link>
 
-        {/* Desktop links */}
+        {/* Desktop center links */}
         {!isMobile && (
           <div style={s.desktopLinks}>
             <NavLink to="/" end style={({ isActive }) => ({ ...s.link, ...(isActive ? s.active : {}) })}>
@@ -45,92 +81,153 @@ export default function Navbar() {
             <NavLink to="/produits" style={({ isActive }) => ({ ...s.link, ...(isActive ? s.active : {}) })}>
               <ShoppingBag size={15} /> Produits
             </NavLink>
-            <a href={`https://wa.me/${import.meta.env.VITE_WHATSAPP || '212671998528'}`} target="_blank" rel="noopener noreferrer" style={s.waLink}>
-              <Phone size={14} /> WhatsApp
-            </a>
-            <Link to="/admin/login" style={s.loginBtn}>
-              <LogIn size={14} /> Admin
-            </Link>
           </div>
         )}
 
-        {/* Mobile burger */}
+        {/* Desktop right */}
+        {!isMobile && (
+          <div style={s.desktopRight}>
+            <a
+              href={`https://wa.me/${WA}?text=Bonjour%2C%20je%20voudrais%20des%20informations`}
+              target="_blank" rel="noopener noreferrer"
+              style={s.waBtn}
+            >
+              <Phone size={14} />
+              <span>+212 671 998 528</span>
+            </a>
+          </div>
+        )}
+
+        {/* Mobile right side */}
         {isMobile && (
-          <button style={s.burger} onClick={() => setOpen(!open)} aria-label="Menu">
-            <AnimatePresence mode="wait" initial={false}>
-              <motion.span
-                key={open ? 'x' : 'menu'}
-                initial={{ rotate: -90, opacity: 0, scale: 0.7 }}
-                animate={{ rotate: 0, opacity: 1, scale: 1 }}
-                exit={{ rotate: 90, opacity: 0, scale: 0.7 }}
-                transition={{ duration: 0.18 }}
-                style={{ display: 'flex' }}
-              >
-                {open ? <X size={26} /> : <Menu size={26} />}
-              </motion.span>
-            </AnimatePresence>
-          </button>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <a href={`https://wa.me/${WA}`} target="_blank" rel="noopener noreferrer" style={s.mobileWaIcon}>
+              <Phone size={18} />
+            </a>
+            <button style={s.burger} onClick={() => setOpen(!open)} aria-label="Menu">
+              <AnimatePresence mode="wait" initial={false}>
+                <motion.span
+                  key={open ? 'x' : 'menu'}
+                  initial={{ rotate: -90, opacity: 0, scale: 0.7 }}
+                  animate={{ rotate: 0, opacity: 1, scale: 1 }}
+                  exit={{ rotate: 90, opacity: 0, scale: 0.7 }}
+                  transition={{ duration: 0.18 }}
+                  style={{ display: 'flex' }}
+                >
+                  {open ? <X size={24} /> : <Menu size={24} />}
+                </motion.span>
+              </AnimatePresence>
+            </button>
+          </div>
         )}
       </motion.nav>
 
-      {/* Mobile slide-in menu */}
+      {/* Mobile full-screen menu */}
       <AnimatePresence>
         {isMobile && open && (
           <>
+            {/* Backdrop */}
             <motion.div
               style={s.backdrop}
               initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
               onClick={() => setOpen(false)}
             />
+
+            {/* Drawer */}
             <motion.div
-              style={s.mobileMenu}
-              initial={{ x: '100%' }} animate={{ x: 0 }} exit={{ x: '100%' }}
-              transition={{ type: 'spring', stiffness: 340, damping: 34 }}
+              style={s.drawer}
+              initial={{ x: '100%' }}
+              animate={{ x: 0 }}
+              exit={{ x: '100%' }}
+              transition={{ type: 'spring', stiffness: 360, damping: 36 }}
             >
-              <div style={s.menuHeader}>
-                <span style={s.menuBrand}>
+              {/* Drawer header */}
+              <div style={s.drawerHeader}>
+                <p style={s.drawerBrand}>
                   Tapisri<span style={{ color: '#d4a96a' }}>-Said</span>
-                </span>
-                <button style={s.closeBtn} onClick={() => setOpen(false)}>
+                </p>
+                <button style={s.drawerClose} onClick={() => setOpen(false)}>
                   <X size={20} color="#f5e6d3" />
                 </button>
               </div>
 
-              <nav style={s.menuNav}>
-                {[
-                  { to: '/', icon: Home, label: 'Accueil', end: true },
-                  { to: '/produits', icon: ShoppingBag, label: 'Produits' },
-                ].map(({ to, icon: Icon, label, end }, i) => (
-                  <motion.div
-                    key={to}
-                    initial={{ x: 40, opacity: 0 }}
-                    animate={{ x: 0, opacity: 1 }}
-                    transition={{ delay: 0.05 + i * 0.07 }}
-                  >
-                    <NavLink
-                      to={to} end={end}
-                      style={({ isActive }) => ({ ...s.menuLink, ...(isActive ? s.menuLinkActive : {}) })}
+              {/* Scroll content */}
+              <div style={s.drawerBody}>
+                {/* Main links */}
+                <div style={s.navSection}>
+                  {[
+                    { to: '/', icon: Home, label: 'Accueil', end: true },
+                    { to: '/produits', icon: ShoppingBag, label: 'Tous les produits' },
+                  ].map(({ to, icon: Icon, label, end }, i) => (
+                    <motion.div
+                      key={to}
+                      initial={{ x: 30, opacity: 0 }}
+                      animate={{ x: 0, opacity: 1 }}
+                      transition={{ delay: 0.04 + i * 0.06 }}
                     >
-                      <div style={s.menuLinkIcon}><Icon size={20} /></div>
-                      <span>{label}</span>
-                    </NavLink>
-                  </motion.div>
-                ))}
-              </nav>
+                      <NavLink
+                        to={to} end={end}
+                        style={({ isActive }) => ({ ...s.navLink, ...(isActive ? s.navLinkActive : {}) })}
+                      >
+                        <div style={s.navLinkIcon}><Icon size={19} /></div>
+                        <span style={{ flex: 1 }}>{label}</span>
+                        <ChevronRight size={15} style={{ opacity: 0.35 }} />
+                      </NavLink>
+                    </motion.div>
+                  ))}
+                </div>
 
+                {/* Categories */}
+                {categories.length > 0 && (
+                  <motion.div
+                    style={s.catSection}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.18 }}
+                  >
+                    <p style={s.sectionLabel}>
+                      <Tag size={12} /> Catégories
+                    </p>
+                    <div style={s.catGrid}>
+                      {categories.map((cat, i) => (
+                        <motion.div
+                          key={cat.id}
+                          initial={{ scale: 0.88, opacity: 0 }}
+                          animate={{ scale: 1, opacity: 1 }}
+                          transition={{ delay: 0.22 + i * 0.05 }}
+                        >
+                          <Link
+                            to={`/produits?category=${cat.slug}`}
+                            style={s.catChip}
+                            onClick={() => setOpen(false)}
+                          >
+                            <span style={s.catChipIcon}><CatIcon slug={cat.slug} size={16} /></span>
+                            <span style={s.catChipName}>{cat.name}</span>
+                            <span style={s.catChipCount}>{cat.products_count ?? 0}</span>
+                          </Link>
+                        </motion.div>
+                      ))}
+                    </div>
+                  </motion.div>
+                )}
+              </div>
+
+              {/* Drawer footer */}
               <motion.div
-                style={s.menuBottom}
-                initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}
+                style={s.drawerFooter}
+                initial={{ opacity: 0, y: 15 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.28 }}
               >
                 <a
-                  href={`https://wa.me/${import.meta.env.VITE_WHATSAPP || '212671998528'}?text=Bonjour%2C%20je%20voudrais%20des%20informations`}
+                  href={`https://wa.me/${WA}?text=Bonjour%2C%20je%20voudrais%20des%20informations`}
                   target="_blank" rel="noopener noreferrer"
-                  style={s.waBtn}
+                  style={s.footerWaBtn}
                 >
-                  <Phone size={18} /> Contacter sur WhatsApp
+                  <Phone size={17} /> Contacter sur WhatsApp
                 </a>
-                <Link to="/admin/login" style={s.adminBtn}>
-                  <LogIn size={16} /> Connexion Admin
+                <Link to="/admin/login" style={s.footerAdminBtn}>
+                  Espace Admin
                 </Link>
               </motion.div>
             </motion.div>
@@ -142,94 +239,147 @@ export default function Navbar() {
 }
 
 const s = {
+  /* ── Navbar ── */
   nav: {
     display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-    padding: '0 1.3rem', height: '62px',
-    background: '#1c0e08',
+    padding: '0 1.4rem', height: '64px',
     position: 'sticky', top: 0, zIndex: 300,
-    boxShadow: '0 1px 0 rgba(255,255,255,0.05), 0 4px 20px rgba(0,0,0,0.4)',
   },
   brand: {
-    fontSize: '1.5rem', fontWeight: 900, color: '#fff',
+    fontSize: '1.45rem', fontWeight: 900, color: '#fff',
     textDecoration: 'none', fontFamily: 'Georgia, serif', letterSpacing: '0.3px',
+    flexShrink: 0,
   },
-  desktopLinks: { display: 'flex', gap: '0.25rem', alignItems: 'center' },
+  desktopLinks: {
+    display: 'flex', gap: '0.15rem', alignItems: 'center',
+    position: 'absolute', left: '50%', transform: 'translateX(-50%)',
+  },
   link: {
     display: 'flex', alignItems: 'center', gap: '0.35rem',
     color: 'rgba(245,230,211,0.78)', textDecoration: 'none', fontSize: '0.9rem',
     padding: '0.48rem 0.9rem', borderRadius: '8px', fontWeight: 500,
+    transition: 'all 0.18s',
   },
-  active: { background: 'rgba(212,169,106,0.13)', color: '#d4a96a', fontWeight: 700 },
-  waLink: {
-    display: 'flex', alignItems: 'center', gap: '0.35rem',
-    color: '#4ade80', textDecoration: 'none', fontSize: '0.86rem',
-    padding: '0.45rem 0.85rem', borderRadius: '8px', fontWeight: 600,
-    background: 'rgba(74,222,128,0.08)',
+  active: {
+    background: 'rgba(212,169,106,0.15)', color: '#d4a96a', fontWeight: 700,
   },
-  loginBtn: {
-    display: 'flex', alignItems: 'center', gap: '0.35rem',
-    background: 'rgba(212,169,106,0.13)', color: '#d4a96a',
-    textDecoration: 'none', fontSize: '0.86rem',
-    padding: '0.45rem 0.9rem', borderRadius: '8px', fontWeight: 700,
-    border: '1px solid rgba(212,169,106,0.22)',
+  desktopRight: { display: 'flex', alignItems: 'center', gap: '0.5rem' },
+  waBtn: {
+    display: 'flex', alignItems: 'center', gap: '0.4rem',
+    background: 'rgba(37,211,102,0.12)', color: '#4ade80',
+    border: '1px solid rgba(37,211,102,0.22)',
+    padding: '0.42rem 0.95rem', borderRadius: '8px',
+    textDecoration: 'none', fontSize: '0.82rem', fontWeight: 600,
+    whiteSpace: 'nowrap',
+  },
+  mobileWaIcon: {
+    display: 'flex', alignItems: 'center', justifyContent: 'center',
+    background: 'rgba(37,211,102,0.14)', color: '#4ade80',
+    width: '36px', height: '36px', borderRadius: '10px',
+    border: '1px solid rgba(37,211,102,0.2)', textDecoration: 'none',
   },
   burger: {
-    background: 'none', border: 'none', color: '#f5e6d3',
-    cursor: 'pointer', padding: '0.3rem', display: 'flex',
+    background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.1)',
+    color: '#f5e6d3', cursor: 'pointer', padding: '0.4rem',
+    display: 'flex', borderRadius: '10px',
   },
 
+  /* ── Backdrop ── */
   backdrop: {
-    position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.55)',
-    zIndex: 400,
+    position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', zIndex: 400,
+    backdropFilter: 'blur(3px)',
   },
-  mobileMenu: {
-    position: 'fixed', top: 0, right: 0, bottom: 0, width: '78%', maxWidth: '290px',
-    background: '#1c0e08', zIndex: 500,
+
+  /* ── Drawer ── */
+  drawer: {
+    position: 'fixed', top: 0, right: 0, bottom: 0,
+    width: '82%', maxWidth: '300px',
+    background: '#1c0e08',
+    zIndex: 500,
     display: 'flex', flexDirection: 'column',
-    boxShadow: '-6px 0 30px rgba(0,0,0,0.6)',
+    boxShadow: '-8px 0 40px rgba(0,0,0,0.7)',
   },
-  menuHeader: {
+  drawerHeader: {
     display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-    padding: '1.1rem 1.3rem',
-    borderBottom: '1px solid rgba(255,255,255,0.07)',
-    height: '62px', boxSizing: 'border-box',
+    padding: '0 1.2rem', height: '64px', flexShrink: 0,
+    borderBottom: '1px solid rgba(255,255,255,0.06)',
+    background: 'rgba(0,0,0,0.2)',
   },
-  menuBrand: {
-    fontSize: '1.2rem', fontWeight: 900, color: '#fff', fontFamily: 'Georgia, serif',
+  drawerBrand: {
+    fontSize: '1.2rem', fontWeight: 900, color: '#fff',
+    fontFamily: 'Georgia, serif', margin: 0,
   },
-  closeBtn: {
+  drawerClose: {
     background: 'rgba(255,255,255,0.08)', border: 'none', borderRadius: '8px',
-    padding: '0.45rem', cursor: 'pointer', display: 'flex',
+    padding: '0.42rem', cursor: 'pointer', display: 'flex',
   },
-  menuNav: { flex: 1, padding: '0.6rem 0' },
-  menuLink: {
-    display: 'flex', alignItems: 'center', gap: '0.9rem',
+  drawerBody: {
+    flex: 1, overflowY: 'auto', padding: '0.8rem 0',
+  },
+
+  /* Nav links */
+  navSection: { padding: '0.3rem 0.8rem', display: 'flex', flexDirection: 'column', gap: '0.2rem' },
+  navLink: {
+    display: 'flex', alignItems: 'center', gap: '0.85rem',
     color: 'rgba(245,230,211,0.72)', textDecoration: 'none',
-    padding: '1rem 1.3rem', fontSize: '1rem', fontWeight: 500,
-    borderLeft: '3px solid transparent',
+    padding: '0.85rem 0.75rem', fontSize: '0.97rem', fontWeight: 500,
+    borderRadius: '12px', transition: 'all 0.18s',
   },
-  menuLinkActive: {
-    color: '#d4a96a', background: 'rgba(212,169,106,0.08)',
-    borderLeft: '3px solid #d4a96a', fontWeight: 700,
+  navLinkActive: {
+    color: '#d4a96a', background: 'rgba(212,169,106,0.1)',
+    fontWeight: 700,
   },
-  menuLinkIcon: {
-    width: '38px', height: '38px', borderRadius: '10px',
+  navLinkIcon: {
+    width: '36px', height: '36px', borderRadius: '10px',
     background: 'rgba(255,255,255,0.06)',
     display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
   },
-  menuBottom: {
-    padding: '1.1rem', borderTop: '1px solid rgba(255,255,255,0.07)',
-    display: 'flex', flexDirection: 'column', gap: '0.65rem',
+
+  /* Categories in menu */
+  catSection: { padding: '0.4rem 1rem 0.6rem' },
+  sectionLabel: {
+    display: 'flex', alignItems: 'center', gap: '0.4rem',
+    color: '#9a6a3a', fontSize: '0.7rem', fontWeight: 700,
+    textTransform: 'uppercase', letterSpacing: '1.2px',
+    margin: '0 0 0.7rem', padding: '0 0.2rem',
+    borderTop: '1px solid rgba(255,255,255,0.06)',
+    paddingTop: '0.8rem',
   },
-  waBtn: {
-    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.6rem',
+  catGrid: { display: 'flex', flexDirection: 'column', gap: '0.35rem' },
+  catChip: {
+    display: 'flex', alignItems: 'center', gap: '0.7rem',
+    background: 'rgba(255,255,255,0.04)', borderRadius: '10px',
+    padding: '0.65rem 0.8rem', textDecoration: 'none',
+    border: '1px solid rgba(255,255,255,0.06)', transition: 'background 0.15s',
+  },
+  catChipIcon: {
+    width: '32px', height: '32px', borderRadius: '8px',
+    background: 'rgba(212,169,106,0.1)', color: '#d4a96a',
+    display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+  },
+  catChipName: { color: 'rgba(245,230,211,0.8)', fontSize: '0.9rem', fontWeight: 600, flex: 1 },
+  catChipCount: {
+    background: 'rgba(212,169,106,0.15)', color: '#d4a96a',
+    padding: '0.1rem 0.45rem', borderRadius: '20px',
+    fontSize: '0.72rem', fontWeight: 700,
+  },
+
+  /* Drawer footer */
+  drawerFooter: {
+    padding: '0.9rem', flexShrink: 0,
+    borderTop: '1px solid rgba(255,255,255,0.07)',
+    display: 'flex', flexDirection: 'column', gap: '0.55rem',
+  },
+  footerWaBtn: {
+    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.55rem',
     background: '#25D366', color: '#fff', textDecoration: 'none',
-    padding: '0.9rem', borderRadius: '10px', fontWeight: 700, fontSize: '0.95rem',
+    padding: '0.88rem', borderRadius: '12px', fontWeight: 700, fontSize: '0.93rem',
+    boxShadow: '0 4px 16px rgba(37,211,102,0.3)',
   },
-  adminBtn: {
-    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.6rem',
-    background: 'rgba(212,169,106,0.08)', color: '#d4a96a',
-    textDecoration: 'none', padding: '0.75rem', borderRadius: '10px',
-    fontWeight: 600, fontSize: '0.88rem', border: '1px solid rgba(212,169,106,0.18)',
+  footerAdminBtn: {
+    display: 'flex', alignItems: 'center', justifyContent: 'center',
+    background: 'rgba(212,169,106,0.08)', color: 'rgba(212,169,106,0.6)',
+    textDecoration: 'none', padding: '0.65rem', borderRadius: '10px',
+    fontWeight: 500, fontSize: '0.82rem', border: '1px solid rgba(212,169,106,0.12)',
   },
 }
