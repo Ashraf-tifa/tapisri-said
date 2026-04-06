@@ -4,24 +4,23 @@ export PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
 PORT="${PORT:-8080}"
 echo "==> PORT is $PORT"
 
-# Configure Apache to listen on the correct port (Railway sets PORT env var)
-echo "Listen $PORT" > /etc/apache2/ports.conf
-sed -i "s/APACHE_PORT/$PORT/g" /etc/apache2/sites-available/000-default.conf
+# Inject port into nginx config
+sed -i "s/NGINX_PORT/$PORT/g" /etc/nginx/nginx.conf
 
-# Create required runtime directories
-mkdir -p /var/run/apache2 /var/lock/apache2 /var/log/apache2
-
-echo "==> Checking Apache config..."
-apache2 -t 2>&1 || true
-
+# Artisan setup
 echo "==> Clearing config cache..."
-/usr/local/bin/php /app/artisan config:clear || true
+php /app/artisan config:clear || true
 
 echo "==> Caching config..."
-/usr/local/bin/php /app/artisan config:cache || true
+php /app/artisan config:cache || true
 
 echo "==> Running migrations..."
-/usr/local/bin/php /app/artisan migrate --force || true
+php /app/artisan migrate --force || true
 
-echo "==> Starting Apache on port $PORT..."
-exec /usr/local/bin/apache2-foreground
+# Start PHP-FPM as background daemon
+echo "==> Starting PHP-FPM..."
+php-fpm -D
+
+# Start Nginx in foreground (keeps container alive)
+echo "==> Starting Nginx on port $PORT..."
+exec nginx -g "daemon off;"

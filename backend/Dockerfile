@@ -1,33 +1,18 @@
-FROM php:8.3-apache
+FROM php:8.3-fpm-alpine
 
-# Clear default entrypoint so Railway can run CMD directly
-ENTRYPOINT []
-
-# Install PHP extensions
-RUN apt-get update && apt-get install -y \
-    git curl zip unzip libpng-dev libxml2-dev libzip-dev libonig-dev \
+# Install nginx + PHP extensions
+RUN apk add --no-cache \
+    nginx git curl zip unzip \
+    libpng-dev libxml2-dev libzip-dev oniguruma-dev \
     && docker-php-ext-install pdo pdo_mysql mbstring xml zip gd \
-    && apt-get clean && rm -rf /var/lib/apt/lists/*
-
-# Ensure only one MPM is active (prefork required for mod_php)
-RUN a2dismod mpm_event mpm_worker 2>/dev/null || true \
-    && a2enmod mpm_prefork
-
-# Enable mod_rewrite and mod_headers
-RUN a2enmod rewrite headers
-
-# Suppress Apache "ServerName" warning
-RUN echo "ServerName localhost" >> /etc/apache2/apache2.conf
-
-# Replace default VirtualHost with our config (port injected at runtime by start.sh)
-COPY apache.conf /etc/apache2/sites-available/000-default.conf
+    && rm -rf /var/cache/apk/*
 
 # Install Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
 WORKDIR /app
 
-# Install PHP dependencies first (layer cache)
+# Install PHP dependencies
 COPY composer.json composer.lock ./
 RUN composer install --no-dev --optimize-autoloader --no-scripts
 
@@ -40,7 +25,8 @@ RUN mkdir -p storage/framework/views storage/framework/cache \
     && chmod -R 775 storage bootstrap/cache \
     && chown -R www-data:www-data /app
 
-# Copy and prepare startup script
+# Copy config files
+COPY nginx.conf /etc/nginx/nginx.conf
 COPY start.sh /start.sh
 RUN chmod +x /start.sh
 
