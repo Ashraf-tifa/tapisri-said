@@ -1,53 +1,243 @@
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Pencil, Trash2, Plus, Sofa, BedDouble, Armchair, Package, Search, Tag } from 'lucide-react'
+import {
+  Pencil, Trash2, Plus, Sofa, BedDouble, Armchair,
+  Package, Tag, Check, X, Layers,
+} from 'lucide-react'
 import api from '../../api/axios'
 import ConfirmModal from '../../components/ConfirmModal'
-import FormModal from '../../components/FormModal'
 import { useToast } from '../../components/Toast'
 
-const CAT_ICONS = {
-  'salon-marocain': Sofa,
-  'canape': Armchair,
-  'lit': BedDouble,
-}
+/* ─── Category icon + color palette ──────────────────────── */
+const PALETTE = [
+  { bg: '#fdf0e0', icon: '#c0804a', border: '#f0d5a8' },
+  { bg: '#edf5ff', icon: '#3b7de8', border: '#bdd6f8' },
+  { bg: '#f0fdf4', icon: '#2e9e5b', border: '#a8dfc0' },
+  { bg: '#fdf0f8', icon: '#c050a0', border: '#f0bae0' },
+  { bg: '#f5f0ff', icon: '#7050d0', border: '#cfc0f8' },
+  { bg: '#fff7ed', icon: '#d06030', border: '#f8d0a8' },
+]
 
-function CatIcon({ slug, size = 22 }) {
+const CAT_ICONS = { 'salon-marocain': Sofa, 'canape': Armchair, 'lit': BedDouble }
+
+function CatIcon({ slug, size = 28 }) {
   const Icon = CAT_ICONS[slug] || Package
-  return <Icon size={size} strokeWidth={1.6} />
+  return <Icon size={size} strokeWidth={1.5} />
 }
 
+/* ─── Inline editable card ────────────────────────────────── */
+function CategoryCard({ cat, index, onEdit, onDelete }) {
+  const [editing, setEditing] = useState(false)
+  const [value, setValue] = useState(cat.name)
+  const inputRef = useRef()
+  const palette = PALETTE[index % PALETTE.length]
+
+  useEffect(() => {
+    if (editing) inputRef.current?.focus()
+  }, [editing])
+
+  const handleSave = () => {
+    if (value.trim() && value.trim() !== cat.name) {
+      onEdit(cat.id, value.trim())
+    }
+    setEditing(false)
+  }
+
+  const handleKey = (e) => {
+    if (e.key === 'Enter') handleSave()
+    if (e.key === 'Escape') { setValue(cat.name); setEditing(false) }
+  }
+
+  return (
+    <motion.div
+      style={{ ...s.card, borderColor: palette.border, background: '#fff' }}
+      initial={{ opacity: 0, y: 16 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, scale: 0.92 }}
+      transition={{ delay: index * 0.05 }}
+      layout
+    >
+      {/* Top accent bar */}
+      <div style={{ ...s.topBar, background: palette.bg, borderBottomColor: palette.border }}>
+        <div style={{ ...s.iconCircle, background: palette.bg, color: palette.icon, border: `2px solid ${palette.border}` }}>
+          <CatIcon slug={cat.slug} />
+        </div>
+      </div>
+
+      {/* Body */}
+      <div style={s.cardBody}>
+        {/* Name: editable inline */}
+        <AnimatePresence mode="wait">
+          {editing ? (
+            <motion.div
+              key="editing"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              style={s.editRow}
+            >
+              <input
+                ref={inputRef}
+                value={value}
+                onChange={(e) => setValue(e.target.value)}
+                onKeyDown={handleKey}
+                style={{ ...s.editInput, borderColor: palette.icon }}
+              />
+              <button style={{ ...s.iconBtn, background: '#e8f5e9', color: '#2e7d32' }} onClick={handleSave}>
+                <Check size={15} />
+              </button>
+              <button style={{ ...s.iconBtn, background: '#fce4ec', color: '#c62828' }} onClick={() => { setValue(cat.name); setEditing(false) }}>
+                <X size={15} />
+              </button>
+            </motion.div>
+          ) : (
+            <motion.p key="name" style={s.catName} initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+              {cat.name}
+            </motion.p>
+          )}
+        </AnimatePresence>
+
+        {/* Count */}
+        <div style={s.countRow}>
+          <span style={{ ...s.countBadge, background: palette.bg, color: palette.icon, borderColor: palette.border }}>
+            <Layers size={11} />
+            {cat.products_count ?? 0} produit{(cat.products_count ?? 0) !== 1 ? 's' : ''}
+          </span>
+        </div>
+      </div>
+
+      {/* Actions */}
+      {!editing && (
+        <div style={s.actions}>
+          <motion.button
+            whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.92 }}
+            style={{ ...s.iconBtn, background: palette.bg, color: palette.icon }}
+            onClick={() => setEditing(true)}
+            title="Renommer"
+          >
+            <Pencil size={14} />
+          </motion.button>
+          <motion.button
+            whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.92 }}
+            style={{ ...s.iconBtn, background: '#fdedf0', color: '#d93025' }}
+            onClick={() => onDelete(cat)}
+            title="Supprimer"
+          >
+            <Trash2 size={14} />
+          </motion.button>
+        </div>
+      )}
+    </motion.div>
+  )
+}
+
+/* ─── Add Modal (name only) ───────────────────────────────── */
+function AddModal({ open, onClose, onSave, isPending }) {
+  const [name, setName] = useState('')
+  const inputRef = useRef()
+
+  useEffect(() => {
+    if (open) { setName(''); setTimeout(() => inputRef.current?.focus(), 80) }
+  }, [open])
+
+  const handleSave = () => {
+    if (name.trim()) { onSave(name.trim()); setName('') }
+  }
+
+  if (!open) return null
+
+  return (
+    <AnimatePresence>
+      <motion.div
+        style={ms.overlay}
+        initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+        onClick={(e) => e.target === e.currentTarget && onClose()}
+      >
+        <motion.div
+          style={ms.modal}
+          initial={{ scale: 0.88, opacity: 0, y: 24 }}
+          animate={{ scale: 1, opacity: 1, y: 0 }}
+          exit={{ scale: 0.88, opacity: 0 }}
+          transition={{ type: 'spring', stiffness: 340, damping: 28 }}
+        >
+          {/* Icon header */}
+          <div style={ms.iconHeader}>
+            <div style={ms.bigIcon}><Tag size={28} /></div>
+            <button style={ms.closeX} onClick={onClose}><X size={18} /></button>
+          </div>
+
+          <h2 style={ms.title}>Nouvelle catégorie</h2>
+          <p style={ms.subtitle}>Donnez un nom à votre nouvelle catégorie</p>
+
+          <input
+            ref={inputRef}
+            style={ms.input}
+            placeholder="Ex: Salon Marocain, Tapis, Canapé..."
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            onKeyDown={(e) => { if (e.key === 'Enter') handleSave() }}
+          />
+
+          <div style={{ display: 'flex', gap: '0.7rem', marginTop: '1.2rem' }}>
+            <motion.button
+              whileTap={{ scale: 0.97 }}
+              style={{ ...ms.saveBtn, opacity: (!name.trim() || isPending) ? 0.6 : 1 }}
+              onClick={handleSave}
+              disabled={isPending || !name.trim()}
+            >
+              <Plus size={17} />
+              {isPending ? 'Création...' : 'Créer la catégorie'}
+            </motion.button>
+            <button style={ms.cancelBtn} onClick={onClose}>Annuler</button>
+          </div>
+        </motion.div>
+      </motion.div>
+    </AnimatePresence>
+  )
+}
+
+const ms = {
+  overlay: { position: 'fixed', inset: 0, background: 'rgba(20,10,5,0.6)', zIndex: 999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' },
+  modal: { background: '#fff', borderRadius: '24px', width: '100%', maxWidth: '420px', padding: '2rem', boxShadow: '0 32px 80px rgba(0,0,0,0.28)', textAlign: 'center', position: 'relative' },
+  iconHeader: { display: 'flex', justifyContent: 'center', marginBottom: '1.2rem', position: 'relative' },
+  bigIcon: { width: '64px', height: '64px', borderRadius: '18px', background: '#fdf4e8', color: '#d4a96a', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 20px rgba(212,169,106,0.3)' },
+  closeX: { position: 'absolute', top: '-0.5rem', right: 0, background: '#f0e8de', border: 'none', borderRadius: '8px', padding: '0.38rem', cursor: 'pointer', color: '#888', display: 'flex' },
+  title: { margin: '0 0 0.35rem', fontSize: '1.3rem', fontWeight: 900, color: '#2c1810' },
+  subtitle: { margin: '0 0 1.3rem', color: '#aaa', fontSize: '0.88rem' },
+  input: { width: '100%', padding: '0.88rem 1rem', border: '2px solid #e8ddd4', borderRadius: '12px', fontSize: '1rem', fontFamily: 'inherit', background: '#fdfaf7', outline: 'none', boxSizing: 'border-box', textAlign: 'left', color: '#2c1810', transition: 'border-color 0.2s' },
+  saveBtn: { flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.45rem', background: '#2c1810', color: '#d4a96a', border: 'none', padding: '0.88rem', borderRadius: '12px', fontWeight: 800, cursor: 'pointer', fontSize: '0.96rem' },
+  cancelBtn: { flex: 1, background: '#f0e8de', color: '#777', border: 'none', padding: '0.88rem', borderRadius: '12px', cursor: 'pointer', fontWeight: 600, fontSize: '0.93rem' },
+}
+
+/* ─── Main page ───────────────────────────────────────────── */
 export default function AdminCategories() {
   const qc = useQueryClient()
   const toast = useToast()
-  const [form, setForm] = useState({ name: '', description: '' })
-  const [editId, setEditId] = useState(null)
-  const [showForm, setShowForm] = useState(false)
+  const [showAdd, setShowAdd] = useState(false)
   const [deleteTarget, setDeleteTarget] = useState(null)
-  const [search, setSearch] = useState('')
 
   const { data: categories = [], isLoading } = useQuery({
     queryKey: ['categories'],
     queryFn: () => api.get('/categories').then((r) => r.data),
   })
 
-  const filtered = categories.filter((c) =>
-    c.name.toLowerCase().includes(search.toLowerCase())
-  )
-
-  const save = useMutation({
-    mutationFn: (data) => editId
-      ? api.put(`/admin/categories/${editId}`, data)
-      : api.post('/admin/categories', data),
+  const create = useMutation({
+    mutationFn: (name) => api.post('/admin/categories', { name }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['categories'] })
-      setForm({ name: '', description: '' })
-      setEditId(null)
-      setShowForm(false)
-      toast(editId ? 'Catégorie modifiée avec succès' : 'Catégorie ajoutée avec succès', 'success')
+      setShowAdd(false)
+      toast('Catégorie créée avec succès', 'success')
     },
     onError: () => toast('Une erreur est survenue', 'error'),
+  })
+
+  const update = useMutation({
+    mutationFn: ({ id, name }) => api.put(`/admin/categories/${id}`, { name }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['categories'] })
+      toast('Catégorie renommée', 'success')
+    },
+    onError: () => toast('Impossible de modifier', 'error'),
   })
 
   const remove = useMutation({
@@ -60,154 +250,84 @@ export default function AdminCategories() {
     onError: () => toast('Impossible de supprimer cette catégorie', 'error'),
   })
 
-  const openAdd = () => { setForm({ name: '', description: '' }); setEditId(null); setShowForm(true) }
-  const openEdit = (cat) => {
-    setForm({ name: cat.name, description: cat.description || '' })
-    setEditId(cat.id); setShowForm(true)
-  }
-  const f = (key) => ({ value: form[key], onChange: (e) => setForm({ ...form, [key]: e.target.value }) })
-
   return (
     <div>
       {/* Header */}
       <div style={s.header}>
         <div>
           <h1 style={s.pageTitle}>Catégories</h1>
-          <p style={s.pageCount}>{categories.length} catégorie{categories.length !== 1 ? 's' : ''} au total</p>
+          <p style={s.pageCount}>
+            {categories.length} catégorie{categories.length !== 1 ? 's' : ''}
+          </p>
         </div>
-        <motion.button whileTap={{ scale: 0.95 }} style={s.addBtn} onClick={openAdd}>
+        <motion.button whileTap={{ scale: 0.95 }} style={s.addBtn} onClick={() => setShowAdd(true)}>
           <Plus size={18} /> Ajouter
         </motion.button>
       </div>
 
-      {/* Search bar */}
-      {categories.length > 0 && (
-        <div style={s.searchWrap}>
-          <Search size={16} style={s.searchIcon} />
-          <input
-            style={s.searchInput}
-            placeholder="Rechercher une catégorie..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-          />
-          {search && (
-            <button style={s.clearBtn} onClick={() => setSearch('')}>×</button>
-          )}
-        </div>
-      )}
-
-      {/* Loading */}
+      {/* Skeleton loading */}
       {isLoading && (
-        <div style={s.loading}>
-          {[1, 2, 3].map((i) => (
+        <div style={s.grid}>
+          {[1, 2, 3, 4].map((i) => (
             <div key={i} style={s.skeleton} />
           ))}
         </div>
       )}
 
-      {/* Cards */}
-      <div style={s.grid}>
-        <AnimatePresence>
-          {filtered.map((cat, i) => (
-            <motion.div
-              key={cat.id} style={s.card}
-              initial={{ opacity: 0, y: 14 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              transition={{ delay: i * 0.04 }}
-            >
-              <div style={s.cardIcon}>
-                <CatIcon slug={cat.slug} />
-              </div>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <p style={s.catName}>{cat.name}</p>
-                {cat.description
-                  ? <p style={s.catDesc}>{cat.description}</p>
-                  : <p style={{ ...s.catDesc, fontStyle: 'italic', opacity: 0.5 }}>Aucune description</p>
-                }
-                <span style={s.countBadge}>
-                  {cat.products_count} produit{cat.products_count !== 1 ? 's' : ''}
-                </span>
-              </div>
-              <div style={s.actions}>
-                <motion.button
-                  whileHover={{ scale: 1.08 }} whileTap={{ scale: 0.93 }}
-                  style={s.editBtn} onClick={() => openEdit(cat)}
-                  title="Modifier"
-                >
-                  <Pencil size={15} />
-                </motion.button>
-                <motion.button
-                  whileHover={{ scale: 1.08 }} whileTap={{ scale: 0.93 }}
-                  style={s.deleteBtn} onClick={() => setDeleteTarget(cat)}
-                  title="Supprimer"
-                >
-                  <Trash2 size={15} />
-                </motion.button>
-              </div>
-            </motion.div>
-          ))}
-        </AnimatePresence>
+      {/* Grid of cards */}
+      {!isLoading && (
+        <motion.div style={s.grid} layout>
+          <AnimatePresence>
+            {categories.map((cat, i) => (
+              <CategoryCard
+                key={cat.id}
+                cat={cat}
+                index={i}
+                onEdit={(id, name) => update.mutate({ id, name })}
+                onDelete={(cat) => setDeleteTarget(cat)}
+              />
+            ))}
 
-        {/* Empty state */}
-        {!isLoading && filtered.length === 0 && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} style={s.emptyState}>
-            <div style={s.emptyIcon}><Tag size={32} strokeWidth={1.3} /></div>
-            <p style={s.emptyTitle}>
-              {search ? 'Aucun résultat' : 'Aucune catégorie'}
-            </p>
-            <p style={s.emptyDesc}>
-              {search
-                ? `Aucune catégorie ne correspond à "${search}"`
-                : 'Commencez par créer votre première catégorie.'}
-            </p>
-            {!search && (
-              <motion.button whileTap={{ scale: 0.96 }} style={s.emptyBtn} onClick={openAdd}>
-                <Plus size={16} /> Créer une catégorie
-              </motion.button>
-            )}
-          </motion.div>
-        )}
-      </div>
-
-      {/* Form Modal */}
-      <FormModal
-        open={showForm}
-        title={editId ? 'Modifier la catégorie' : 'Nouvelle catégorie'}
-        onClose={() => setShowForm(false)}
-        width={480}
-      >
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-          <div>
-            <label style={s.label}>Nom *</label>
-            <input style={s.input} placeholder="Ex: Salon Marocain" {...f('name')} />
-          </div>
-          <div>
-            <label style={s.label}>Description</label>
-            <textarea
-              style={{ ...s.input, minHeight: '85px', resize: 'vertical' }}
-              placeholder="Description de la catégorie..."
-              {...f('description')}
-            />
-          </div>
-          <div style={{ display: 'flex', gap: '0.7rem', paddingTop: '0.2rem' }}>
+            {/* Add card button */}
             <motion.button
+              key="add-card"
+              style={s.addCard}
+              onClick={() => setShowAdd(true)}
+              whileHover={{ scale: 1.03, borderColor: '#d4a96a' }}
               whileTap={{ scale: 0.97 }}
-              style={{ ...s.saveBtn, opacity: (!form.name.trim() || save.isPending) ? 0.6 : 1 }}
-              onClick={() => save.mutate(form)}
-              disabled={save.isPending || !form.name.trim()}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
             >
-              {save.isPending ? 'Sauvegarde...' : 'Enregistrer'}
+              <div style={s.addCardIcon}><Plus size={22} /></div>
+              <span style={s.addCardText}>Nouvelle catégorie</span>
             </motion.button>
-            <button style={s.cancelBtn} onClick={() => setShowForm(false)}>Annuler</button>
-          </div>
-        </div>
-      </FormModal>
+          </AnimatePresence>
+        </motion.div>
+      )}
+
+      {/* Empty state */}
+      {!isLoading && categories.length === 0 && (
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} style={s.emptyState}>
+          <div style={s.emptyIconWrap}><Tag size={34} strokeWidth={1.3} /></div>
+          <p style={s.emptyTitle}>Aucune catégorie</p>
+          <p style={s.emptyDesc}>Créez votre première catégorie pour organiser vos produits.</p>
+          <motion.button whileTap={{ scale: 0.96 }} style={s.emptyBtn} onClick={() => setShowAdd(true)}>
+            <Plus size={16} /> Créer une catégorie
+          </motion.button>
+        </motion.div>
+      )}
+
+      <AddModal
+        open={showAdd}
+        onClose={() => setShowAdd(false)}
+        onSave={(name) => create.mutate(name)}
+        isPending={create.isPending}
+      />
 
       <ConfirmModal
         open={!!deleteTarget}
         title="Supprimer la catégorie"
-        message={`Supprimer "${deleteTarget?.name}" ? Tous ses produits seront supprimés.`}
+        message={`Supprimer "${deleteTarget?.name}" ? Les produits associés seront aussi supprimés.`}
         onConfirm={() => remove.mutate(deleteTarget.id)}
         onCancel={() => setDeleteTarget(null)}
       />
@@ -216,60 +336,34 @@ export default function AdminCategories() {
 }
 
 const s = {
-  header: { display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem' },
+  header: { display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.5rem' },
   pageTitle: { fontSize: 'clamp(1.3rem, 4vw, 1.8rem)', fontWeight: 800, color: '#2c1810', margin: '0 0 0.15rem' },
   pageCount: { margin: 0, fontSize: '0.82rem', color: '#9a8070', fontWeight: 500 },
-  addBtn: { display: 'flex', alignItems: 'center', gap: '0.4rem', background: '#d4a96a', color: '#2c1810', border: 'none', padding: '0.65rem 1.2rem', borderRadius: '10px', fontWeight: 800, cursor: 'pointer', fontSize: '0.9rem', flexShrink: 0 },
+  addBtn: { display: 'flex', alignItems: 'center', gap: '0.4rem', background: '#2c1810', color: '#d4a96a', border: 'none', padding: '0.68rem 1.3rem', borderRadius: '10px', fontWeight: 800, cursor: 'pointer', fontSize: '0.92rem', flexShrink: 0, boxShadow: '0 4px 16px rgba(44,24,16,0.22)' },
 
-  searchWrap: {
-    position: 'relative', marginBottom: '1rem',
-    display: 'flex', alignItems: 'center',
-  },
-  searchIcon: { position: 'absolute', left: '0.9rem', color: '#aaa', pointerEvents: 'none' },
-  searchInput: {
-    width: '100%', padding: '0.7rem 0.9rem 0.7rem 2.5rem',
-    border: '1.5px solid #e8ddd4', borderRadius: '10px',
-    fontSize: '0.92rem', background: '#fff', outline: 'none', boxSizing: 'border-box',
-    fontFamily: 'inherit',
-  },
-  clearBtn: {
-    position: 'absolute', right: '0.8rem',
-    background: 'none', border: 'none', cursor: 'pointer',
-    fontSize: '1.1rem', color: '#aaa', lineHeight: 1, padding: '0.2rem',
-  },
+  grid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '1rem' },
 
-  loading: { display: 'flex', flexDirection: 'column', gap: '0.8rem' },
-  skeleton: { height: '80px', borderRadius: '12px', background: '#f0e8de', animation: 'pulse 1.5s ease-in-out infinite' },
+  skeleton: { height: '160px', borderRadius: '16px', background: 'linear-gradient(90deg, #f5ede4 25%, #fdf8f2 50%, #f5ede4 75%)', backgroundSize: '200%', animation: 'shimmer 1.4s infinite' },
 
-  grid: { display: 'flex', flexDirection: 'column', gap: '0.7rem' },
-  card: {
-    background: '#fff', padding: '1rem 1.1rem', borderRadius: '14px',
-    display: 'flex', alignItems: 'center', gap: '0.9rem',
-    boxShadow: '0 1px 6px rgba(0,0,0,0.06)', border: '1px solid #f5ede4',
-  },
-  cardIcon: {
-    width: '48px', height: '48px', borderRadius: '12px',
-    background: '#fdf4e8', display: 'flex', alignItems: 'center',
-    justifyContent: 'center', color: '#9a6a3a', flexShrink: 0,
-  },
-  catName: { margin: '0 0 0.2rem', fontWeight: 800, color: '#2c1810', fontSize: '0.97rem' },
-  catDesc: { margin: '0 0 0.45rem', color: '#999', fontSize: '0.82rem', lineHeight: 1.4, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' },
-  countBadge: { display: 'inline-block', background: '#f5e6d3', color: '#9a6a3a', padding: '0.12rem 0.6rem', borderRadius: '20px', fontSize: '0.73rem', fontWeight: 700 },
-  actions: { display: 'flex', gap: '0.4rem', flexShrink: 0 },
-  editBtn: { background: '#eef2fd', color: '#3b6de8', border: 'none', padding: '0.55rem', borderRadius: '9px', cursor: 'pointer', display: 'flex' },
-  deleteBtn: { background: '#fdedf0', color: '#d93025', border: 'none', padding: '0.55rem', borderRadius: '9px', cursor: 'pointer', display: 'flex' },
+  card: { borderRadius: '16px', border: '1.5px solid #f0e8de', overflow: 'hidden', display: 'flex', flexDirection: 'column', background: '#fff', boxShadow: '0 2px 10px rgba(44,24,16,0.06)', position: 'relative' },
+  topBar: { padding: '1.4rem 1rem 0.9rem', display: 'flex', justifyContent: 'center', borderBottom: '1px solid' },
+  iconCircle: { width: '52px', height: '52px', borderRadius: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center' },
+  cardBody: { padding: '0.85rem 0.9rem 0.75rem', flex: 1, display: 'flex', flexDirection: 'column', gap: '0.5rem', alignItems: 'center', textAlign: 'center' },
+  catName: { margin: 0, fontWeight: 800, color: '#2c1810', fontSize: '0.97rem', lineHeight: 1.3 },
+  countRow: { display: 'flex', justifyContent: 'center' },
+  countBadge: { display: 'inline-flex', alignItems: 'center', gap: '0.28rem', padding: '0.22rem 0.7rem', borderRadius: '20px', fontSize: '0.75rem', fontWeight: 700, border: '1px solid' },
+  actions: { display: 'flex', justifyContent: 'center', gap: '0.5rem', padding: '0.6rem 0.9rem', borderTop: '1px solid #f5ede4' },
+  iconBtn: { display: 'flex', alignItems: 'center', justifyContent: 'center', border: 'none', borderRadius: '8px', padding: '0.42rem', cursor: 'pointer' },
+  editRow: { display: 'flex', gap: '0.3rem', width: '100%', alignItems: 'center' },
+  editInput: { flex: 1, padding: '0.42rem 0.6rem', border: '2px solid', borderRadius: '7px', fontSize: '0.88rem', fontFamily: 'inherit', outline: 'none', background: '#fdfaf7', color: '#2c1810', minWidth: 0 },
 
-  emptyState: {
-    textAlign: 'center', padding: '3rem 1.5rem',
-    background: '#fff', borderRadius: '16px', border: '1.5px dashed #e8ddd4',
-  },
-  emptyIcon: { color: '#d4b896', marginBottom: '0.8rem', display: 'flex', justifyContent: 'center' },
+  addCard: { borderRadius: '16px', border: '2px dashed #e8d5b0', background: '#fdfaf7', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '0.6rem', padding: '2rem 1rem', cursor: 'pointer', minHeight: '160px', transition: 'border-color 0.2s' },
+  addCardIcon: { width: '44px', height: '44px', borderRadius: '12px', background: '#fdf0e0', color: '#d4a96a', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '2px dashed #e8d5b0' },
+  addCardText: { color: '#b08060', fontWeight: 700, fontSize: '0.88rem' },
+
+  emptyState: { textAlign: 'center', padding: '3rem 1.5rem', background: '#fff', borderRadius: '16px', border: '1.5px dashed #e8ddd4', marginTop: '0.5rem' },
+  emptyIconWrap: { color: '#d4b896', marginBottom: '1rem', display: 'flex', justifyContent: 'center' },
   emptyTitle: { fontWeight: 800, color: '#2c1810', fontSize: '1.1rem', margin: '0 0 0.4rem' },
-  emptyDesc: { color: '#aaa', fontSize: '0.88rem', margin: '0 0 1.2rem', lineHeight: 1.5 },
-  emptyBtn: { display: 'inline-flex', alignItems: 'center', gap: '0.4rem', background: '#d4a96a', color: '#2c1810', border: 'none', padding: '0.7rem 1.4rem', borderRadius: '10px', fontWeight: 800, cursor: 'pointer', fontSize: '0.9rem' },
-
-  label: { display: 'block', fontSize: '0.78rem', fontWeight: 700, color: '#888', marginBottom: '0.4rem', textTransform: 'uppercase', letterSpacing: '0.5px' },
-  input: { width: '100%', padding: '0.78rem 0.95rem', border: '1.5px solid #e0d0c0', borderRadius: '9px', fontSize: '0.95rem', boxSizing: 'border-box', fontFamily: 'inherit', background: '#fdfaf7', outline: 'none' },
-  saveBtn: { flex: 1, background: '#2c1810', color: '#d4a96a', border: 'none', padding: '0.82rem', borderRadius: '9px', fontWeight: 800, cursor: 'pointer', fontSize: '0.95rem' },
-  cancelBtn: { flex: 1, background: '#f0e8de', color: '#777', border: 'none', padding: '0.82rem', borderRadius: '9px', cursor: 'pointer', fontWeight: 600 },
+  emptyDesc: { color: '#aaa', fontSize: '0.88rem', margin: '0 0 1.2rem' },
+  emptyBtn: { display: 'inline-flex', alignItems: 'center', gap: '0.4rem', background: '#2c1810', color: '#d4a96a', border: 'none', padding: '0.75rem 1.5rem', borderRadius: '10px', fontWeight: 800, cursor: 'pointer', fontSize: '0.9rem' },
 }

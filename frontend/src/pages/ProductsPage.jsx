@@ -43,8 +43,8 @@ export default function ProductsPage() {
   const gridStyle = {
     display: 'grid',
     gridTemplateColumns: isMobile
-      ? 'repeat(2, 1fr)'
-      : 'repeat(auto-fill, minmax(250px, 1fr))',
+      ? '1fr'
+      : 'repeat(auto-fill, minmax(260px, 1fr))',
     gap: isMobile ? '0.7rem' : '1.2rem',
   }
 
@@ -142,7 +142,7 @@ export default function ProductsPage() {
               style={gridStyle}
             >
               {filtered.map((p, i) => (
-                <ProductCard key={p.id} product={p} index={i} />
+                <ProductCard key={p.id} product={p} index={i} horizontal={isMobile} />
               ))}
             </motion.div>
           </AnimatePresence>
@@ -209,7 +209,7 @@ const s = {
   },
 
   skeleton: {
-    height: 'clamp(220px, 45vw, 300px)',
+    height: 'clamp(120px, 28vw, 200px)',
     background: 'linear-gradient(90deg, #ede8e3 25%, #f5f0eb 50%, #ede8e3 75%)',
     backgroundSize: '200% 100%',
     borderRadius: '14px',
