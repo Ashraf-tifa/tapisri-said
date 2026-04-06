@@ -1,14 +1,16 @@
 #!/bin/sh
-set -e
+
+echo "==> Working directory: $(pwd)"
+echo "==> PHP: $(/usr/local/bin/php -v | head -1)"
 
 echo "==> Clearing config cache..."
-/usr/local/bin/php /app/artisan config:clear
+/usr/local/bin/php /app/artisan config:clear || true
 
 echo "==> Caching fresh config..."
-/usr/local/bin/php /app/artisan config:cache
+/usr/local/bin/php /app/artisan config:cache || true
 
 echo "==> Running migrations..."
-/usr/local/bin/php /app/artisan migrate --force
+/usr/local/bin/php /app/artisan migrate --force || true
 
-echo "==> Starting Apache on port 8080..."
-exec apache2-foreground
+echo "==> Starting Apache..."
+exec /usr/local/bin/apache2-foreground
