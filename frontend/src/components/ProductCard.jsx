@@ -3,7 +3,7 @@ import { motion } from 'framer-motion'
 import { MessageCircle, Star, Images, Eye } from 'lucide-react'
 import { img, waLink } from '../config'
 
-const PLACEHOLDER = 'https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=600&q=80'
+const PLACEHOLDER = 'https://res.cloudinary.com/dznz5lsre/image/upload/tapisri/products/phpnBmDpM'
 
 // Only use Cloudinary URLs (https://). Old Railway paths → placeholder
 function getImageUrl(path) {
