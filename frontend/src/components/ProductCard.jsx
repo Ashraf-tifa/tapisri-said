@@ -224,21 +224,22 @@ const v = {
   imgWrap: {
     display: 'block', position: 'relative',
     overflow: 'hidden',
-    aspectRatio: '4 / 3',
+    paddingBottom: '75%',   /* 4:3 ratio — works with absolute img */
     background: '#f5ede4',
   },
   img: {
+    position: 'absolute', inset: 0,
     width: '100%', height: '100%',
     objectFit: 'cover', display: 'block',
     transition: 'transform 0.5s ease',
   },
   gradient: {
-    position: 'absolute', inset: 0,
-    background: 'linear-gradient(to top, rgba(20,8,4,0.85) 0%, rgba(20,8,4,0.3) 50%, transparent 100%)',
+    position: 'absolute', inset: 0, zIndex: 1,
+    background: 'linear-gradient(to top, rgba(20,8,4,0.88) 0%, rgba(20,8,4,0.25) 55%, transparent 100%)',
     pointerEvents: 'none',
   },
   topRow: {
-    position: 'absolute', top: '0.7rem', left: '0.7rem', right: '0.7rem',
+    position: 'absolute', top: '0.7rem', left: '0.7rem', right: '0.7rem', zIndex: 2,
     display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start',
   },
   badge: {
@@ -257,7 +258,7 @@ const v = {
     marginLeft: 'auto',
   },
   overlay: {
-    position: 'absolute', bottom: 0, left: 0, right: 0,
+    position: 'absolute', bottom: 0, left: 0, right: 0, zIndex: 2,
     padding: '1.2rem 1rem 0.9rem',
     display: 'flex', flexDirection: 'column', gap: '0.15rem',
   },
