@@ -153,7 +153,7 @@ function PhotosSection({ product }) {
         </div>
         <input
           ref={inputRef} type="file" multiple accept="image/*"
-          style={{ display: 'none' }}
+          style={{ position: 'absolute', opacity: 0, width: '1px', height: '1px', overflow: 'hidden' }}
           onChange={(e) => handleFiles(e.target.files)}
         />
       </label>

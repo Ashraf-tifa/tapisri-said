@@ -101,25 +101,26 @@ export default function ImageUploader({ product, onClose }) {
           </div>
         )}
 
-        {/* Drop zone */}
-        <div
-          style={{ ...styles.dropZone, ...(dragging ? styles.dropActive : {}) }}
+        {/* Drop zone — label for mobile compatibility */}
+        <label
+          style={{ ...styles.dropZone, ...(dragging ? styles.dropActive : {}), display: 'block', cursor: 'pointer' }}
           onDragOver={(e) => { e.preventDefault(); setDragging(true) }}
           onDragLeave={() => setDragging(false)}
           onDrop={handleDrop}
-          onClick={() => inputRef.current?.click()}
         >
-          <Upload size={32} color="#d4a96a" />
-          <p style={{ margin: '0.5rem 0 0', color: '#9a6a3a', fontWeight: 600 }}>
-            Glissez des photos ici ou cliquez pour sélectionner
-          </p>
-          <p style={{ margin: '0.2rem 0 0', color: '#bbb', fontSize: '0.8rem' }}>JPG, PNG, WEBP — max 4 Mo</p>
+          <div style={{ textAlign: 'center' }}>
+            <Upload size={32} color="#d4a96a" />
+            <p style={{ margin: '0.5rem 0 0', color: '#9a6a3a', fontWeight: 600 }}>
+              Appuyez pour ajouter des photos
+            </p>
+            <p style={{ margin: '0.2rem 0 0', color: '#bbb', fontSize: '0.8rem' }}>JPG, PNG, WEBP — max 4 Mo</p>
+          </div>
           <input
             ref={inputRef} type="file" multiple accept="image/*"
-            style={{ display: 'none' }}
+            style={{ position: 'absolute', opacity: 0, width: '1px', height: '1px', overflow: 'hidden' }}
             onChange={(e) => handleFiles(e.target.files)}
           />
-        </div>
+        </label>
 
         {/* Previews */}
         <AnimatePresence>
