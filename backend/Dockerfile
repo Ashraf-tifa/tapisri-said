@@ -7,7 +7,8 @@ ENTRYPOINT []
 RUN apk add --no-cache \
     git curl zip unzip \
     libpng-dev libxml2-dev libzip-dev oniguruma-dev \
-    && docker-php-ext-install pdo pdo_mysql mbstring xml zip gd
+    && docker-php-ext-install pdo pdo_mysql mbstring xml zip gd \
+    && docker-php-ext-enable curl || true
 
 # Install Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
