@@ -7,10 +7,29 @@ use App\Models\Product;
 use App\Models\ProductImage;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
-use CloudinaryLabs\CloudinaryLaravel\Facades\Cloudinary;
+use Cloudinary\Cloudinary;
 
 class ProductImageController extends Controller
 {
+    /**
+     * Build a Cloudinary instance from CLOUDINARY_URL env variable.
+     * Format: cloudinary://api_key:api_secret@cloud_name
+     */
+    private function cloudinary(): Cloudinary
+    {
+        $raw     = env('CLOUDINARY_URL', '');
+        $parsed  = parse_url($raw);
+
+        return new Cloudinary([
+            'cloud' => [
+                'cloud_name' => $parsed['host']  ?? '',
+                'api_key'    => $parsed['user']  ?? '',
+                'api_secret' => $parsed['pass']  ?? '',
+            ],
+            'url' => ['secure' => true],
+        ]);
+    }
+
     public function store(Request $request, Product $product)
     {
         $request->validate([
@@ -18,18 +37,20 @@ class ProductImageController extends Controller
             'images.*' => 'image|mimes:jpeg,png,jpg,webp|max:4096',
         ]);
 
-        $hasMain = $product->images()->where('is_main', true)->exists();
+        $hasMain  = $product->images()->where('is_main', true)->exists();
         $uploaded = [];
+        $cl       = $this->cloudinary();
 
         foreach ($request->file('images') as $index => $file) {
 
-            $cloudinaryImage = Cloudinary::upload($file->getRealPath(), [
-                'folder'         => 'tapisri/products',
-                'transformation' => [['quality' => 'auto', 'fetch_format' => 'auto']],
+            $result   = $cl->uploadApi()->upload($file->getRealPath(), [
+                'folder'      => 'tapisri/products',
+                'quality'     => 'auto',
+                'fetch_format'=> 'auto',
             ]);
 
-            $url      = $cloudinaryImage->getSecurePath();
-            $publicId = $cloudinaryImage->getPublicId();
+            $url      = $result['secure_url'];
+            $publicId = $result['public_id'];
 
             $isMain = !$hasMain && $index === 0;
             if ($isMain) $hasMain = true;
@@ -59,22 +80,18 @@ class ProductImageController extends Controller
 
     public function destroy(Product $product, ProductImage $image)
     {
-        // Delete from Cloudinary if we have the public_id
         if ($image->cloudinary_public_id) {
             try {
-                Cloudinary::destroy($image->cloudinary_public_id);
+                $this->cloudinary()->uploadApi()->destroy($image->cloudinary_public_id);
             } catch (\Exception $e) {
-                // Log but don't fail if Cloudinary delete fails
                 \Log::warning('Cloudinary delete failed: ' . $e->getMessage());
             }
         } else {
-            // Fallback: delete from local storage (legacy images)
             Storage::disk('public')->delete($image->path);
         }
 
         $image->delete();
 
-        // If deleted image was main, promote the next one
         if ($image->is_main) {
             $next = $product->images()->first();
             if ($next) $next->update(['is_main' => true]);
