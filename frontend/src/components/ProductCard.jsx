@@ -5,8 +5,15 @@ import { img, waLink } from '../config'
 
 const PLACEHOLDER = 'https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=600&q=80'
 
+// Only use Cloudinary URLs (https://). Old Railway paths → placeholder
+function getImageUrl(path) {
+  if (!path) return PLACEHOLDER
+  if (path.startsWith('http://') || path.startsWith('https://')) return path
+  return PLACEHOLDER   // old local Railway path — broken, show placeholder
+}
+
 export default function ProductCard({ product, index = 0, horizontal = false }) {
-  const imageUrl = img(product.main_image?.path) || PLACEHOLDER
+  const imageUrl = getImageUrl(product.main_image?.path)
   const waUrl = waLink(product.whatsapp_number, `Bonjour, je suis intéressé(e) par: ${product.name}`)
   const imgCount = product.images?.length || 0
 

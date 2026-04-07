@@ -3,8 +3,9 @@ export const WHATSAPP    = import.meta.env.VITE_WHATSAPP    || '212671998528'
 
 export const img = (path) => {
   if (!path) return null
+  // Only return full URLs (Cloudinary). Old local paths (Railway) are broken.
   if (path.startsWith('http://') || path.startsWith('https://')) return path
-  return `${STORAGE_URL}/${path}`
+  return null   // old Railway path — caller should use placeholder
 }
 export const waLink = (number, message) => {
   const num = (number || WHATSAPP).replace(/\D/g, '')
