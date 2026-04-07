@@ -537,10 +537,10 @@ export default function AdminProducts() {
         </motion.button>
       </div>
 
-      {/* Auth error banner */}
-      {productsError && (
+      {/* Auth error banner — only when error AND no data at all */}
+      {productsError && products.length === 0 && (
         <div style={{ background: '#fff3cd', border: '1px solid #ffc107', borderRadius: '10px', padding: '0.9rem 1.1rem', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.7rem', fontSize: '0.88rem', color: '#856404' }}>
-          ⚠️ Impossible de charger les produits. Veuillez vous <strong style={{ cursor: 'pointer', textDecoration: 'underline' }} onClick={() => window.location.reload()}>déconnecter et reconnecter</strong> pour rafraîchir votre session.
+          ⚠️ Session expirée. Veuillez vous <strong style={{ cursor: 'pointer', textDecoration: 'underline' }} onClick={() => { localStorage.removeItem('token'); window.location.href = '/admin/login' }}>reconnecter</strong>.
         </div>
       )}
 
