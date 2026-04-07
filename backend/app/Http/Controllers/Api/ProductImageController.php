@@ -7,13 +7,14 @@ use App\Models\Product;
 use App\Models\ProductImage;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use CloudinaryLabs\CloudinaryLaravel\Facades\Cloudinary;
 
 class ProductImageController extends Controller
 {
     public function store(Request $request, Product $product)
     {
         $request->validate([
-            'images' => 'required|array|min:1',
+            'images'   => 'required|array|min:1',
             'images.*' => 'image|mimes:jpeg,png,jpg,webp|max:4096',
         ]);
 
@@ -21,17 +22,25 @@ class ProductImageController extends Controller
         $uploaded = [];
 
         foreach ($request->file('images') as $index => $file) {
-            $path = $file->store('products', 'public');
+
+            $cloudinaryImage = Cloudinary::upload($file->getRealPath(), [
+                'folder'         => 'tapisri/products',
+                'transformation' => [['quality' => 'auto', 'fetch_format' => 'auto']],
+            ]);
+
+            $url      = $cloudinaryImage->getSecurePath();
+            $publicId = $cloudinaryImage->getPublicId();
 
             $isMain = !$hasMain && $index === 0;
             if ($isMain) $hasMain = true;
 
             $image = ProductImage::create([
-                'product_id' => $product->id,
-                'path' => $path,
-                'alt' => $product->name,
-                'is_main' => $isMain,
-                'sort_order' => $product->images()->count(),
+                'product_id'           => $product->id,
+                'path'                 => $url,
+                'cloudinary_public_id' => $publicId,
+                'alt'                  => $product->name,
+                'is_main'              => $isMain,
+                'sort_order'           => $product->images()->count(),
             ]);
 
             $uploaded[] = $image;
@@ -50,7 +59,19 @@ class ProductImageController extends Controller
 
     public function destroy(Product $product, ProductImage $image)
     {
-        Storage::disk('public')->delete($image->path);
+        // Delete from Cloudinary if we have the public_id
+        if ($image->cloudinary_public_id) {
+            try {
+                Cloudinary::destroy($image->cloudinary_public_id);
+            } catch (\Exception $e) {
+                // Log but don't fail if Cloudinary delete fails
+                \Log::warning('Cloudinary delete failed: ' . $e->getMessage());
+            }
+        } else {
+            // Fallback: delete from local storage (legacy images)
+            Storage::disk('public')->delete($image->path);
+        }
+
         $image->delete();
 
         // If deleted image was main, promote the next one
