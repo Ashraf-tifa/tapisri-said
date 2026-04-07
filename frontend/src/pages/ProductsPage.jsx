@@ -65,8 +65,8 @@ export default function ProductsPage() {
     display: 'grid',
     gridTemplateColumns: isMobile
       ? '1fr'
-      : 'repeat(auto-fill, minmax(260px, 1fr))',
-    gap: isMobile ? '0.7rem' : '1.2rem',
+      : 'repeat(auto-fill, minmax(280px, 1fr))',
+    gap: isMobile ? '0.75rem' : '1.4rem',
   }
 
   return (

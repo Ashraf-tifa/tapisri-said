@@ -323,7 +323,7 @@ const styles = {
 
   featuredSection: { background: '#fff', padding: 'clamp(2.5rem, 5vw, 4rem) 0' },
   featuredInner: { maxWidth: '1200px', margin: '0 auto', padding: '0 clamp(1rem, 4vw, 2rem)' },
-  productGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: '1rem' },
+  productGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '1.4rem' },
 
   /* Footer */
   footer: { background: '#1c0e08', color: '#f5e6d3' },
