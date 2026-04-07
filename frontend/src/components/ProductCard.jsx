@@ -3,7 +3,7 @@ import { motion } from 'framer-motion'
 import { MessageCircle, Star, Images, Eye } from 'lucide-react'
 import { img, waLink } from '../config'
 
-const PLACEHOLDER = 'https://res.cloudinary.com/dznz5lsre/image/upload/tapisri/products/phpnBmDpM'
+const PLACEHOLDER = `data:image/svg+xml,${encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="600" height="450" viewBox="0 0 600 450"><rect width="600" height="450" fill="#f0e8df"/><rect x="140" y="200" width="320" height="120" rx="12" fill="#d4b896"/><rect x="110" y="280" width="60" height="40" rx="6" fill="#c4a882"/><rect x="430" y="280" width="60" height="40" rx="6" fill="#c4a882"/><rect x="150" y="160" width="300" height="55" rx="10" fill="#c4a882"/><rect x="110" y="195" width="380" height="20" rx="6" fill="#b8967a"/><circle cx="240" cy="185" r="18" fill="#e8d0b8"/><circle cx="360" cy="185" r="18" fill="#e8d0b8"/><text x="300" y="380" text-anchor="middle" font-size="18" fill="#9a7a5a" font-family="system-ui" font-weight="600">Tapisri-Said</text></svg>`)}`
 
 // Only use Cloudinary URLs (https://). Old Railway paths → placeholder
 function getImageUrl(path) {
