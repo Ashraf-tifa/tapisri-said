@@ -101,26 +101,28 @@ export default function ImageUploader({ product, onClose }) {
           </div>
         )}
 
-        {/* Drop zone — label for mobile compatibility */}
-        <label
-          style={{ ...styles.dropZone, ...(dragging ? styles.dropActive : {}), display: 'block', cursor: 'pointer' }}
+        {/* Drop zone — input overlays entire area for reliable mobile tap */}
+        <div
+          style={{ ...styles.dropZone, ...(dragging ? styles.dropActive : {}), position: 'relative' }}
           onDragOver={(e) => { e.preventDefault(); setDragging(true) }}
           onDragLeave={() => setDragging(false)}
           onDrop={handleDrop}
         >
-          <div style={{ textAlign: 'center' }}>
-            <Upload size={32} color="#d4a96a" />
-            <p style={{ margin: '0.5rem 0 0', color: '#9a6a3a', fontWeight: 600 }}>
-              Appuyez pour ajouter des photos
-            </p>
-            <p style={{ margin: '0.2rem 0 0', color: '#bbb', fontSize: '0.8rem' }}>JPG, PNG, WEBP — max 4 Mo</p>
-          </div>
+          <Upload size={32} color="#d4a96a" />
+          <p style={{ margin: '0.5rem 0 0', color: '#9a6a3a', fontWeight: 600 }}>
+            Appuyez pour ajouter des photos
+          </p>
+          <p style={{ margin: '0.2rem 0 0', color: '#bbb', fontSize: '0.8rem' }}>JPG, PNG, WEBP — max 4 Mo</p>
           <input
             ref={inputRef} type="file" multiple accept="image/*"
-            style={{ position: 'absolute', opacity: 0, width: '1px', height: '1px', overflow: 'hidden' }}
+            style={{
+              position: 'absolute', inset: 0,
+              width: '100%', height: '100%',
+              opacity: 0, cursor: 'pointer', fontSize: '16px',
+            }}
             onChange={(e) => handleFiles(e.target.files)}
           />
-        </label>
+        </div>
 
         {/* Previews */}
         <AnimatePresence>

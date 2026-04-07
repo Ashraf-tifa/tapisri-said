@@ -137,26 +137,28 @@ function PhotosSection({ product }) {
         </div>
       )}
 
-      {/* Drop zone — label wraps input for reliable mobile support */}
-      <label
-        style={{ ...ps.dropZone, ...(dragging ? ps.dropActive : {}), display: 'block', cursor: 'pointer' }}
+      {/* Drop zone — input overlays entire area for reliable mobile tap */}
+      <div
+        style={{ ...ps.dropZone, ...(dragging ? ps.dropActive : {}), position: 'relative' }}
         onDragOver={(e) => { e.preventDefault(); setDragging(true) }}
         onDragLeave={() => setDragging(false)}
         onDrop={(e) => { e.preventDefault(); setDragging(false); handleFiles(e.dataTransfer.files) }}
       >
-        <div style={{ textAlign: 'center' }}>
-          <Upload size={28} color="#d4a96a" />
-          <p style={{ margin: '0.5rem 0 0.1rem', color: '#9a6a3a', fontWeight: 700, fontSize: '0.9rem' }}>
-            Appuyez pour ajouter des photos
-          </p>
-          <p style={{ margin: 0, color: '#bbb', fontSize: '0.78rem' }}>JPG, PNG, WEBP — max 4 Mo</p>
-        </div>
+        <Upload size={28} color="#d4a96a" />
+        <p style={{ margin: '0.5rem 0 0.1rem', color: '#9a6a3a', fontWeight: 700, fontSize: '0.9rem' }}>
+          Appuyez pour ajouter des photos
+        </p>
+        <p style={{ margin: 0, color: '#bbb', fontSize: '0.78rem' }}>JPG, PNG, WEBP — max 4 Mo</p>
         <input
           ref={inputRef} type="file" multiple accept="image/*"
-          style={{ position: 'absolute', opacity: 0, width: '1px', height: '1px', overflow: 'hidden' }}
+          style={{
+            position: 'absolute', inset: 0,
+            width: '100%', height: '100%',
+            opacity: 0, cursor: 'pointer', fontSize: '16px',
+          }}
           onChange={(e) => handleFiles(e.target.files)}
         />
-      </label>
+      </div>
 
       {/* Previews + upload button */}
       <AnimatePresence>
