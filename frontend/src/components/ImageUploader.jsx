@@ -1,4 +1,5 @@
 import { useState, useRef } from 'react'
+import ConfirmModal from './ConfirmModal'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Upload, Trash2, Star, ImagePlus, X } from 'lucide-react'
@@ -12,6 +13,7 @@ export default function ImageUploader({ product, onClose }) {
   const inputRef = useRef()
   const [previews, setPreviews] = useState([])
   const [dragging, setDragging] = useState(false)
+  const [confirmImgId, setConfirmImgId] = useState(null)
 
   const images = product.images || []
 
@@ -90,7 +92,7 @@ export default function ImageUploader({ product, onClose }) {
                       <Star size={15} />
                     </button>
                   )}
-                  <button style={styles.delBtn} onClick={() => { if (confirm('Supprimer?')) remove.mutate(img.id) }}>
+                  <button style={styles.delBtn} onClick={() => setConfirmImgId(img.id)}>
                     <Trash2 size={15} />
                   </button>
                 </div>
@@ -147,6 +149,15 @@ export default function ImageUploader({ product, onClose }) {
           )}
         </AnimatePresence>
       </motion.div>
+
+      <ConfirmModal
+        open={!!confirmImgId}
+        title="Supprimer la photo ?"
+        message="Cette action est irréversible. La photo sera définitivement supprimée."
+        danger
+        onCancel={() => setConfirmImgId(null)}
+        onConfirm={() => { remove.mutate(confirmImgId); setConfirmImgId(null) }}
+      />
     </motion.div>
   )
 }

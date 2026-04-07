@@ -90,6 +90,7 @@ export default function ProductDetailPage() {
                 <motion.img
                   key={mainIdx}
                   src={IMG(mainPath)}
+                  onError={(e) => { e.target.src = PLACEHOLDER }}
                   alt={product.name}
                   style={s.mobileMainImg}
                   initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
@@ -125,6 +126,7 @@ export default function ProductDetailPage() {
                   <motion.img
                     key={img.id}
                     src={IMG(img.path)}
+                    onError={(e) => { e.target.src = 'https://placehold.co/60x60/f5e6d3/9a6a3a?text=?' }}
                     alt=""
                     style={{ ...s.thumb, ...(i === mainIdx ? s.thumbActive : {}) }}
                     whileTap={{ scale: 0.93 }}
@@ -172,6 +174,7 @@ export default function ProductDetailPage() {
                 <motion.img
                   key={mainIdx}
                   src={IMG(mainPath)}
+                  onError={(e) => { e.target.src = PLACEHOLDER }}
                   alt={product.name}
                   style={s.desktopMainImg}
                   initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }}
@@ -185,6 +188,7 @@ export default function ProductDetailPage() {
                     <motion.img
                       key={img.id}
                       src={IMG(img.path)}
+                      onError={(e) => { e.target.src = 'https://placehold.co/60x60/f5e6d3/9a6a3a?text=?' }}
                       alt=""
                       style={{ ...s.thumb, width: '72px', height: '72px', ...(i === mainIdx ? s.thumbActive : {}) }}
                       whileHover={{ scale: 1.06 }} whileTap={{ scale: 0.93 }}

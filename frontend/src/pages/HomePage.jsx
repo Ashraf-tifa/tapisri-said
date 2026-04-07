@@ -212,7 +212,7 @@ export default function HomePage() {
               </div>
               <div style={styles.footerContact}>
                 <MapPin size={14} style={{ flexShrink: 0 }} />
-                <span>Maroc</span>
+                <span>Meknès, Maroc</span>
               </div>
               <div style={styles.footerContact}>
                 <Clock size={14} style={{ flexShrink: 0 }} />

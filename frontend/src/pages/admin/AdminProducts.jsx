@@ -33,6 +33,7 @@ function PhotosSection({ product }) {
   const inputRef = useRef()
   const [previews, setPreviews] = useState([])
   const [dragging, setDragging] = useState(false)
+  const [confirmImgId, setConfirmImgId] = useState(null)
 
   // Own query — always fresh for this product
   const { data: freshImages = product?.images || [] } = useQuery({
@@ -111,7 +112,7 @@ function PhotosSection({ product }) {
                 style={{ ...ps.imgWrap, ...(img.is_main ? ps.imgMain : {}) }}
                 whileHover={{ scale: 1.03 }}
               >
-                <img src={IMG(img.path)} alt="" style={ps.thumbImg} />
+                <img src={IMG(img.path)} alt="" style={ps.thumbImg} onError={(e) => { e.target.src = 'https://placehold.co/90x90/f5e6d3/9a6a3a?text=?' }} />
                 {img.is_main && <span style={ps.mainBadge}>⭐ Principale</span>}
                 <div style={ps.imgActions}>
                   {!img.is_main && (
@@ -125,7 +126,7 @@ function PhotosSection({ product }) {
                   )}
                   <button
                     style={ps.delBtn}
-                    onClick={() => { if (confirm('Supprimer cette photo ?')) remove.mutate(img.id) }}
+                    onClick={() => setConfirmImgId(img.id)}
                   >
                     <X size={13} />
                   </button>
@@ -194,6 +195,15 @@ function PhotosSection({ product }) {
           </motion.div>
         )}
       </AnimatePresence>
+
+      <ConfirmModal
+        open={!!confirmImgId}
+        title="Supprimer la photo ?"
+        message="Cette action est irréversible. La photo sera définitivement supprimée."
+        danger
+        onCancel={() => setConfirmImgId(null)}
+        onConfirm={() => { remove.mutate(confirmImgId); setConfirmImgId(null) }}
+      />
     </div>
   )
 }
@@ -601,6 +611,7 @@ export default function AdminProducts() {
               <div style={s.cardImgWrap}>
                 <img
                   src={p.main_image ? IMG(p.main_image.path) : PLACEHOLDER}
+                  onError={(e) => { e.target.src = PLACEHOLDER }}
                   alt={p.name}
                   style={s.cardImg}
                 />
@@ -656,6 +667,7 @@ export default function AdminProducts() {
                     <div style={{ position: 'relative', display: 'inline-block' }}>
                       <img
                         src={p.main_image ? IMG(p.main_image.path) : PLACEHOLDER}
+                        onError={(e) => { e.target.src = PLACEHOLDER }}
                         alt=""
                         style={{ width: 52, height: 48, objectFit: 'cover', borderRadius: 8 }}
                       />
