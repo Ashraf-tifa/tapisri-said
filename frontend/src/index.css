@@ -31,10 +31,8 @@ body {
 .hide-scroll::-webkit-scrollbar { display: none; }
 .hide-scroll { -ms-overflow-style: none; scrollbar-width: none; }
 
-/* Smooth image loading */
-img { transition: opacity 0.3s ease; }
-img[loading="lazy"] { opacity: 0; }
-img[loading="lazy"].loaded { opacity: 1; }
+/* Smooth image rendering */
+img { display: block; }
 
 #root { width: 100%; min-height: 100vh; }
 
