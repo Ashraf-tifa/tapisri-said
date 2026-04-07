@@ -9,6 +9,9 @@ php /app/artisan config:clear || true
 php /app/artisan route:clear || true
 php /app/artisan cache:clear || true
 
+echo "==> Discovering packages..."
+php /app/artisan package:discover --ansi || true
+
 echo "==> Caching config..."
 php /app/artisan config:cache || true
 

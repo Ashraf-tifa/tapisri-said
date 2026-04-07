@@ -21,6 +21,9 @@ RUN composer install --no-dev --optimize-autoloader --no-scripts
 # Copy application source
 COPY . .
 
+# Discover packages (needed because --no-scripts skips auto-discovery)
+RUN php artisan package:discover --ansi || true
+
 # Set storage permissions
 RUN mkdir -p storage/framework/views storage/framework/cache \
         storage/framework/sessions storage/logs bootstrap/cache \
