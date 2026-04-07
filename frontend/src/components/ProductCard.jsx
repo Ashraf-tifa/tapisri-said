@@ -21,7 +21,8 @@ export default function ProductCard({ product, index = 0, horizontal = false }) 
       >
         {/* Image */}
         <Link to={`/produits/${product.slug}`} style={h.imgWrap}>
-          <img src={imageUrl} alt={product.name} style={h.img} loading="lazy" />
+          <img src={imageUrl} alt={product.name} style={h.img} loading="lazy"
+            onError={(e) => { e.target.src = PLACEHOLDER }} />
           {product.is_featured && (
             <span style={h.badge}><Star size={9} fill="#2c1810" color="#2c1810" /> Vedette</span>
           )}
@@ -65,7 +66,8 @@ export default function ProductCard({ product, index = 0, horizontal = false }) 
     >
       {/* Image */}
       <Link to={`/produits/${product.slug}`} style={v.imgWrap}>
-        <img src={imageUrl} alt={product.name} style={v.img} loading="lazy" />
+        <img src={imageUrl} alt={product.name} style={v.img} loading="lazy"
+          onError={(e) => { e.target.src = PLACEHOLDER }} />
         <div className="card-overlay" style={v.overlay} />
         {product.is_featured && (
           <span style={v.badge}>

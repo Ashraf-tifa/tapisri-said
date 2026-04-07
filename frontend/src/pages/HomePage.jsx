@@ -14,8 +14,12 @@ const stagger = { animate: { transition: { staggerChildren: 0.12 } } }
 
 const CAT_ICON_MAP = {
   'salon-marocain': Sofa,
+  'salon': Sofa,
   'canape': Armchair,
+  'canapes': Armchair,
   'lit': BedDouble,
+  'chambre': BedDouble,
+  'lits': BedDouble,
 }
 
 function CatIcon({ slug }) {
@@ -224,7 +228,7 @@ export default function HomePage() {
 
         {/* Bottom bar */}
         <div style={styles.footerBottom}>
-          <span>© 2025 Tapisri-Said — Tous droits réservés</span>
+          <span>© 2026 Tapisri-Said — Tous droits réservés</span>
           <Link to="/admin/login" style={styles.footerAdminLink}>Espace Admin</Link>
         </div>
       </footer>
@@ -234,15 +238,15 @@ export default function HomePage() {
 
 const styles = {
   hero: {
-    background: 'url(/images/tapi.jpg) center/cover no-repeat',
-    minHeight: '92vh',
+    background: 'url(/images/tapi.jpg) center 40%/cover no-repeat',
+    minHeight: 'clamp(75vh, 92vh, 100vh)',
     display: 'flex', alignItems: 'center',
     padding: 'clamp(2rem, 6vw, 5rem) clamp(1.5rem, 6vw, 6rem)',
     position: 'relative',
   },
   heroOverlay: {
     position: 'absolute', inset: 0,
-    background: 'linear-gradient(to bottom, rgba(5,2,1,0.88) 0%, rgba(10,4,2,0.78) 35%, rgba(44,24,16,0.62) 100%)',
+    background: 'linear-gradient(135deg, rgba(10,4,2,0.82) 0%, rgba(28,14,8,0.70) 50%, rgba(44,24,16,0.45) 100%)',
     pointerEvents: 'none',
   },
   heroContentWrap: {
