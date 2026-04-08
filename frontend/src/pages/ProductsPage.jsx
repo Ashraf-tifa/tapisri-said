@@ -201,7 +201,7 @@ export default function ProductsPage() {
 
 const s = {
   filterBar: {
-    position: 'sticky', top: '62px', zIndex: 100,
+    position: 'sticky', top: '66px', zIndex: 100,
     background: '#fff',
     borderBottom: '1px solid #ede8e3',
     padding: '0.7rem 1rem',

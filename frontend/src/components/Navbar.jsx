@@ -1,11 +1,16 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Link, NavLink, useLocation } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Home, ShoppingBag, Menu, X, Phone, ChevronRight, Tag, Sofa, Armchair, BedDouble, Package } from 'lucide-react'
+import {
+  Home, ShoppingBag, Menu, X, Phone, ChevronRight,
+  Tag, Sofa, Armchair, BedDouble, Package, ChevronDown,
+  MessageCircle,
+} from 'lucide-react'
 import api from '../api/axios'
 
 const WA = import.meta.env.VITE_WHATSAPP || '212671998528'
+const WA_URL = `https://wa.me/${WA}?text=${encodeURIComponent('Bonjour, je voudrais des informations sur vos produits')}`
 
 const CAT_ICONS = { 'salon-marocain': Sofa, 'canape': Armchair, 'lit': BedDouble }
 function CatIcon({ slug, size = 18 }) {
@@ -14,9 +19,9 @@ function CatIcon({ slug, size = 18 }) {
 }
 
 function useIsMobile() {
-  const [v, setV] = useState(window.innerWidth < 680)
+  const [v, setV] = useState(window.innerWidth < 768)
   useEffect(() => {
-    const h = () => setV(window.innerWidth < 680)
+    const h = () => setV(window.innerWidth < 768)
     window.addEventListener('resize', h)
     return () => window.removeEventListener('resize', h)
   }, [])
@@ -26,11 +31,102 @@ function useIsMobile() {
 function useScrolled() {
   const [scrolled, setScrolled] = useState(false)
   useEffect(() => {
-    const h = () => setScrolled(window.scrollY > 30)
+    const h = () => setScrolled(window.scrollY > 40)
     window.addEventListener('scroll', h, { passive: true })
     return () => window.removeEventListener('scroll', h)
   }, [])
   return scrolled
+}
+
+/* ── Categories dropdown (desktop hover) ── */
+function CategoriesDropdown({ categories }) {
+  const [open, setOpen] = useState(false)
+  const ref = useRef()
+  const timerRef = useRef()
+
+  const show = () => { clearTimeout(timerRef.current); setOpen(true) }
+  const hide = () => { timerRef.current = setTimeout(() => setOpen(false), 120) }
+
+  return (
+    <div
+      style={{ position: 'relative' }}
+      onMouseEnter={show}
+      onMouseLeave={hide}
+    >
+      {/* Trigger */}
+      <NavLink
+        to="/produits"
+        style={({ isActive }) => ({ ...s.link, ...(isActive ? s.active : {}) })}
+      >
+        <ShoppingBag size={15} strokeWidth={2} />
+        Produits
+        <motion.span
+          animate={{ rotate: open ? 180 : 0 }}
+          transition={{ duration: 0.2 }}
+          style={{ display: 'flex', opacity: 0.6 }}
+        >
+          <ChevronDown size={13} />
+        </motion.span>
+      </NavLink>
+
+      {/* Dropdown panel */}
+      <AnimatePresence>
+        {open && categories.length > 0 && (
+          <motion.div
+            ref={ref}
+            style={s.dropdown}
+            initial={{ opacity: 0, y: -8, scale: 0.97 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -6, scale: 0.97 }}
+            transition={{ duration: 0.18, ease: 'easeOut' }}
+            onMouseEnter={show}
+            onMouseLeave={hide}
+          >
+            {/* Arrow */}
+            <div style={s.dropArrow} />
+
+            <p style={s.dropLabel}><Tag size={11} /> Toutes les catégories</p>
+
+            {categories.map((cat) => (
+              <Link
+                key={cat.id}
+                to={`/produits?category=${cat.slug}`}
+                style={s.dropItem}
+                onMouseEnter={e => e.currentTarget.style.background = 'rgba(212,169,106,0.08)'}
+                onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                onClick={() => setOpen(false)}
+              >
+                <span style={s.dropItemIcon}><CatIcon slug={cat.slug} size={16} /></span>
+                <span style={{ flex: 1, color: '#2c1810', fontSize: '0.88rem', fontWeight: 600 }}>
+                  {cat.name}
+                </span>
+                {cat.products_count !== undefined && (
+                  <span style={s.dropCount}>{cat.products_count}</span>
+                )}
+              </Link>
+            ))}
+
+            <div style={s.dropDivider} />
+            <Link
+              to="/produits"
+              style={{ ...s.dropItem, color: '#d4a96a' }}
+              onMouseEnter={e => e.currentTarget.style.background = 'rgba(212,169,106,0.08)'}
+              onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+              onClick={() => setOpen(false)}
+            >
+              <span style={{ ...s.dropItemIcon, background: 'rgba(212,169,106,0.12)', color: '#d4a96a' }}>
+                <ShoppingBag size={15} />
+              </span>
+              <span style={{ flex: 1, color: '#d4a96a', fontSize: '0.88rem', fontWeight: 700 }}>
+                Tous les produits
+              </span>
+              <ChevronRight size={14} style={{ opacity: 0.5 }} />
+            </Link>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  )
 }
 
 export default function Navbar() {
@@ -38,7 +134,6 @@ export default function Navbar() {
   const location = useLocation()
   const isMobile = useIsMobile()
   const scrolled = useScrolled()
-  const isHome = location.pathname === '/'
 
   const { data: categories = [] } = useQuery({
     queryKey: ['categories'],
@@ -51,57 +146,68 @@ export default function Navbar() {
     return () => { document.body.style.overflow = '' }
   }, [open])
 
-  // Nav: always solid dark (hero now has its own overlay)
-  const navBg = '#1c0e08'
-  const navBlur = 'none'
+  const navHeight = scrolled ? '56px' : '66px'
+  const navBg = scrolled
+    ? 'rgba(18,8,4,0.97)'
+    : '#1c0e08'
+  const navBlur = scrolled ? 'blur(12px)' : 'none'
   const navShadow = scrolled
-    ? '0 2px 20px rgba(0,0,0,0.5)'
+    ? '0 2px 24px rgba(0,0,0,0.55)'
     : '0 1px 0 rgba(255,255,255,0.06)'
 
   return (
     <>
       <motion.nav
-        initial={{ y: -64, opacity: 0 }}
+        initial={{ y: -72, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
-        transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
-        style={{ ...s.nav, background: navBg, boxShadow: navShadow, backdropFilter: navBlur, WebkitBackdropFilter: navBlur, transition: 'background 0.35s, box-shadow 0.35s, backdrop-filter 0.35s' }}
+        transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+        style={{
+          ...s.nav,
+          background: navBg,
+          boxShadow: navShadow,
+          backdropFilter: navBlur,
+          WebkitBackdropFilter: navBlur,
+          height: navHeight,
+          transition: 'background 0.35s, box-shadow 0.35s, height 0.3s, backdrop-filter 0.35s',
+        }}
       >
         {/* Brand */}
         <Link to="/" style={s.brand}>
-          Tapisri<span style={{ color: '#d4a96a' }}>-Said</span>
+          <span style={s.brandText}>Tapisri</span>
+          <span style={s.brandAccent}>-Said</span>
         </Link>
 
         {/* Desktop center links */}
         {!isMobile && (
-          <div style={s.desktopLinks}>
-            <NavLink to="/" end style={({ isActive }) => ({ ...s.link, ...(isActive ? s.active : {}) })}>
-              <Home size={15} /> Accueil
+          <div style={s.desktopLinks} className="desktop-links">
+            <NavLink
+              to="/"
+              end
+              style={({ isActive }) => ({ ...s.link, ...(isActive ? s.active : {}) })}
+            >
+              <Home size={15} strokeWidth={2} />
+              Accueil
             </NavLink>
-            <NavLink to="/produits" style={({ isActive }) => ({ ...s.link, ...(isActive ? s.active : {}) })}>
-              <ShoppingBag size={15} /> Produits
-            </NavLink>
+
+            <CategoriesDropdown categories={categories} />
           </div>
         )}
 
         {/* Desktop right */}
         {!isMobile && (
-          <div style={s.desktopRight}>
-            <a
-              href={`https://wa.me/${WA}?text=Bonjour%2C%20je%20voudrais%20des%20informations`}
-              target="_blank" rel="noopener noreferrer"
-              style={s.waBtn}
-            >
-              <Phone size={14} />
-              <span>+212 671 998 528</span>
+          <div style={s.desktopRight} className="desktop-links">
+            <a href={WA_URL} target="_blank" rel="noopener noreferrer" style={s.waBtn}>
+              <MessageCircle size={16} strokeWidth={2.2} />
+              <span>Contacter</span>
             </a>
           </div>
         )}
 
-        {/* Mobile right side */}
+        {/* Mobile right */}
         {isMobile && (
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <a href={`https://wa.me/${WA}`} target="_blank" rel="noopener noreferrer" style={s.mobileWaIcon}>
-              <Phone size={18} />
+            <a href={WA_URL} target="_blank" rel="noopener noreferrer" style={s.mobileWaIcon}>
+              <MessageCircle size={18} />
             </a>
             <button style={s.burger} onClick={() => setOpen(!open)} aria-label="Menu">
               <AnimatePresence mode="wait" initial={false}>
@@ -121,18 +227,15 @@ export default function Navbar() {
         )}
       </motion.nav>
 
-      {/* Mobile full-screen menu */}
+      {/* Mobile full-screen drawer */}
       <AnimatePresence>
         {isMobile && open && (
           <>
-            {/* Backdrop */}
             <motion.div
               style={s.backdrop}
               initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
               onClick={() => setOpen(false)}
             />
-
-            {/* Drawer */}
             <motion.div
               style={s.drawer}
               initial={{ x: '100%' }}
@@ -218,12 +321,8 @@ export default function Navbar() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.28 }}
               >
-                <a
-                  href={`https://wa.me/${WA}?text=Bonjour%2C%20je%20voudrais%20des%20informations`}
-                  target="_blank" rel="noopener noreferrer"
-                  style={s.footerWaBtn}
-                >
-                  <Phone size={17} /> Contacter sur WhatsApp
+                <a href={WA_URL} target="_blank" rel="noopener noreferrer" style={s.footerWaBtn}>
+                  <MessageCircle size={17} /> Contacter sur WhatsApp
                 </a>
                 <Link to="/admin/login" style={s.footerAdminBtn}>
                   Espace Admin
@@ -241,46 +340,115 @@ const s = {
   /* ── Navbar ── */
   nav: {
     display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-    padding: '0 1.4rem', height: '64px',
+    padding: '0 2rem',
     position: 'sticky', top: 0, zIndex: 300,
   },
   brand: {
-    fontSize: '1.45rem', fontWeight: 900, color: '#fff',
-    textDecoration: 'none', fontFamily: 'Georgia, serif', letterSpacing: '0.3px',
+    textDecoration: 'none', fontFamily: 'Georgia, serif',
+    display: 'flex', alignItems: 'baseline', gap: '1px',
     flexShrink: 0,
   },
+  brandText: {
+    fontSize: '1.5rem', fontWeight: 900, color: '#fff',
+    letterSpacing: '0.3px',
+  },
+  brandAccent: {
+    fontSize: '1.5rem', fontWeight: 900, color: '#d4a96a',
+    letterSpacing: '0.3px',
+  },
+
+  /* Desktop nav links */
   desktopLinks: {
-    display: 'flex', gap: '0.15rem', alignItems: 'center',
+    display: 'flex', gap: '0.1rem', alignItems: 'center',
     position: 'absolute', left: '50%', transform: 'translateX(-50%)',
   },
   link: {
-    display: 'flex', alignItems: 'center', gap: '0.35rem',
-    color: 'rgba(245,230,211,0.78)', textDecoration: 'none', fontSize: '0.9rem',
-    padding: '0.48rem 0.9rem', borderRadius: '8px', fontWeight: 500,
-    transition: 'all 0.18s',
-  },
-  active: {
-    background: 'rgba(212,169,106,0.15)', color: '#d4a96a', fontWeight: 700,
-  },
-  desktopRight: { display: 'flex', alignItems: 'center', gap: '0.5rem' },
-  waBtn: {
-    display: 'flex', alignItems: 'center', gap: '0.4rem',
-    background: 'rgba(37,211,102,0.12)', color: '#4ade80',
-    border: '1px solid rgba(37,211,102,0.22)',
-    padding: '0.42rem 0.95rem', borderRadius: '8px',
-    textDecoration: 'none', fontSize: '0.82rem', fontWeight: 600,
+    display: 'flex', alignItems: 'center', gap: '0.38rem',
+    color: 'rgba(245,230,211,0.72)', textDecoration: 'none', fontSize: '0.9rem',
+    padding: '0.48rem 1rem', borderRadius: '8px', fontWeight: 500,
+    transition: 'color 0.18s, background 0.18s',
     whiteSpace: 'nowrap',
   },
+  active: {
+    color: '#d4a96a', fontWeight: 700,
+    background: 'rgba(212,169,106,0.12)',
+  },
+
+  /* Desktop right */
+  desktopRight: { display: 'flex', alignItems: 'center', gap: '0.7rem' },
+  waBtn: {
+    display: 'flex', alignItems: 'center', gap: '0.45rem',
+    background: '#25D366',
+    color: '#fff',
+    padding: '0.5rem 1.1rem', borderRadius: '10px',
+    textDecoration: 'none', fontSize: '0.88rem', fontWeight: 700,
+    boxShadow: '0 3px 14px rgba(37,211,102,0.35)',
+    whiteSpace: 'nowrap',
+    transition: 'background 0.18s, box-shadow 0.18s',
+  },
+
+  /* Mobile */
   mobileWaIcon: {
     display: 'flex', alignItems: 'center', justifyContent: 'center',
     background: 'rgba(37,211,102,0.14)', color: '#4ade80',
-    width: '36px', height: '36px', borderRadius: '10px',
-    border: '1px solid rgba(37,211,102,0.2)', textDecoration: 'none',
+    width: '38px', height: '38px', borderRadius: '10px',
+    border: '1px solid rgba(37,211,102,0.22)', textDecoration: 'none',
   },
   burger: {
     background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.1)',
-    color: '#f5e6d3', cursor: 'pointer', padding: '0.4rem',
+    color: '#f5e6d3', cursor: 'pointer', padding: '0.42rem',
     display: 'flex', borderRadius: '10px',
+  },
+
+  /* ── Categories Dropdown ── */
+  dropdown: {
+    position: 'absolute', top: 'calc(100% + 10px)', left: '50%',
+    transform: 'translateX(-50%)',
+    background: '#fff',
+    borderRadius: '14px',
+    boxShadow: '0 16px 48px rgba(44,24,16,0.18), 0 2px 8px rgba(0,0,0,0.08)',
+    border: '1px solid rgba(212,169,106,0.15)',
+    minWidth: '220px',
+    overflow: 'hidden',
+    padding: '0.5rem 0.4rem',
+    zIndex: 400,
+  },
+  dropArrow: {
+    position: 'absolute', top: '-6px', left: '50%', transform: 'translateX(-50%)',
+    width: '12px', height: '12px',
+    background: '#fff',
+    borderLeft: '1px solid rgba(212,169,106,0.15)',
+    borderTop: '1px solid rgba(212,169,106,0.15)',
+    rotate: '45deg',
+  },
+  dropLabel: {
+    display: 'flex', alignItems: 'center', gap: '0.35rem',
+    color: '#b08060', fontSize: '0.68rem', fontWeight: 700,
+    textTransform: 'uppercase', letterSpacing: '1px',
+    margin: '0 0.4rem 0.4rem', padding: '0.3rem 0.4rem 0.5rem',
+    borderBottom: '1px solid rgba(212,169,106,0.12)',
+  },
+  dropItem: {
+    display: 'flex', alignItems: 'center', gap: '0.65rem',
+    padding: '0.6rem 0.7rem', borderRadius: '10px',
+    textDecoration: 'none', transition: 'background 0.14s',
+    background: 'transparent',
+    cursor: 'pointer',
+  },
+  dropItemIcon: {
+    width: '32px', height: '32px', borderRadius: '8px',
+    background: 'rgba(44,24,16,0.06)', color: '#9a6a3a',
+    display: 'flex', alignItems: 'center', justifyContent: 'center',
+    flexShrink: 0,
+  },
+  dropCount: {
+    background: 'rgba(212,169,106,0.15)', color: '#9a6a3a',
+    padding: '0.1rem 0.45rem', borderRadius: '20px',
+    fontSize: '0.72rem', fontWeight: 700,
+  },
+  dropDivider: {
+    height: '1px', background: 'rgba(212,169,106,0.12)',
+    margin: '0.35rem 0.5rem',
   },
 
   /* ── Backdrop ── */
@@ -312,9 +480,7 @@ const s = {
     background: 'rgba(255,255,255,0.08)', border: 'none', borderRadius: '8px',
     padding: '0.42rem', cursor: 'pointer', display: 'flex',
   },
-  drawerBody: {
-    flex: 1, overflowY: 'auto', padding: '0.8rem 0',
-  },
+  drawerBody: { flex: 1, overflowY: 'auto', padding: '0.8rem 0' },
 
   /* Nav links */
   navSection: { padding: '0.3rem 0.8rem', display: 'flex', flexDirection: 'column', gap: '0.2rem' },
@@ -325,8 +491,7 @@ const s = {
     borderRadius: '12px', transition: 'all 0.18s',
   },
   navLinkActive: {
-    color: '#d4a96a', background: 'rgba(212,169,106,0.1)',
-    fontWeight: 700,
+    color: '#d4a96a', background: 'rgba(212,169,106,0.1)', fontWeight: 700,
   },
   navLinkIcon: {
     width: '36px', height: '36px', borderRadius: '10px',
@@ -334,15 +499,14 @@ const s = {
     display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
   },
 
-  /* Categories in menu */
+  /* Categories in drawer */
   catSection: { padding: '0.4rem 1rem 0.6rem' },
   sectionLabel: {
     display: 'flex', alignItems: 'center', gap: '0.4rem',
     color: '#9a6a3a', fontSize: '0.7rem', fontWeight: 700,
     textTransform: 'uppercase', letterSpacing: '1.2px',
-    margin: '0 0 0.7rem', padding: '0 0.2rem',
+    margin: '0 0 0.7rem', padding: '0.8rem 0.2rem 0',
     borderTop: '1px solid rgba(255,255,255,0.06)',
-    paddingTop: '0.8rem',
   },
   catGrid: { display: 'flex', flexDirection: 'column', gap: '0.35rem' },
   catChip: {

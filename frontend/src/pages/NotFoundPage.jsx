@@ -36,7 +36,7 @@ export default function NotFoundPage() {
 const s = {
   page: {
     display: 'flex', alignItems: 'center', justifyContent: 'center',
-    minHeight: 'calc(100vh - 62px)',
+    minHeight: 'calc(100vh - 66px)',
     padding: '2rem 1rem',
   },
   card: {
