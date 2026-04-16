@@ -20,7 +20,7 @@ html { scroll-behavior: smooth; }
 
 body {
   margin: 0;
-  font-family: system-ui, 'Segoe UI', Roboto, sans-serif;
+  font-family: 'DM Sans', system-ui, sans-serif;
   background: #faf6f1;
   color: #333;
   -webkit-font-smoothing: antialiased;
